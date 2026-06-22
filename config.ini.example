@@ -1,0 +1,25 @@
+[SMTP]
+host = smtp.gmail.com
+port = 587
+username = your_email@gmail.com
+password = your_app_password
+use_tls = True
+use_ssl = False
+
+[SENDER]
+name = Professional Mailer
+email = your_email@gmail.com
+
+[EMAIL_CONTENT]
+subject = Notification from Flask Mailer
+mode = html
+html_path = uploads/templates/default.html
+plain_path = uploads/templates/default.txt
+
+[SETTINGS]
+concurrency_limit = 5
+max_retries = 3
+retry_delay = 5
+timeout = 30
+log_level = INFO
+log_file = logs/mailer.log

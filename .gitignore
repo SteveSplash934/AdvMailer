@@ -1,0 +1,45 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Packages
+.venv/
+venv/
+ENV/
+env/
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# --- Flask / Web ---
+# Flask local development instances
+instance/
+# If you store secrets or local configs here
+.env
+.flaskenv
+
+# --- IDE / OS ---
+# VS Code
+.vscode/
+# PyCharm
+.idea/
+# OS specific
+.DS_Store
+Thumbs.db
+
+# --- Logs ---
+*.log
+trash/
+uploads/
+config.ini
+sample.env
+smtptest.py
+todo.md
+run.bat
+recp.txt
+database.db
