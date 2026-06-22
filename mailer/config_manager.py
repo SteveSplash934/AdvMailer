@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import configparser
+from datetime import datetime
 
 class ConfigManager:
     def __init__(self, db_path='database.db', ini_path='config.ini'):
@@ -16,15 +17,16 @@ class ConfigManager:
                         (section TEXT, key TEXT, value TEXT, PRIMARY KEY (section, key))''')
         cursor.execute('''CREATE TABLE IF NOT EXISTS templates 
                         (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, filename TEXT, type TEXT)''')
+        # ADDED JOB HISTORY TABLE
+        cursor.execute('''CREATE TABLE IF NOT EXISTS job_history 
+                        (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT, subject TEXT, sent INTEGER, failed INTEGER, status TEXT)''')
         conn.commit()
         
-        # If the database was just created, try to import from config.ini
         if not db_exists:
             self._import_from_ini()
         conn.close()
 
     def _import_from_ini(self):
-        """Helper to migrate config.ini data into SQLite on first run."""
         if os.path.exists(self.ini_path):
             config = configparser.ConfigParser()
             config.read(self.ini_path)
@@ -78,3 +80,21 @@ class ConfigManager:
             cursor = conn.cursor()
             cursor.execute('SELECT name, filename, type FROM templates')
             return [{"name": r[0], "filename": r[1], "type": r[2]} for r in cursor.fetchall()]
+
+    # --- ADDED HISTORY METHODS ---
+    def add_job(self, subject):
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            date_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            cursor.execute('INSERT INTO job_history (date, subject, sent, failed, status) VALUES (?, ?, 0, 0, "Running")', (date_str, subject))
+            return cursor.lastrowid
+
+    def update_job(self, job_id, sent, failed, status):
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute('UPDATE job_history SET sent = ?, failed = ?, status = ? WHERE id = ?', (sent, failed, status, job_id))
+
+    def get_history(self):
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT date, subject, sent, failed, status FROM job_history ORDER BY id DESC')
+            return [{"date": r[0], "subject": r[1], "sent": r[2], "failed": r[3], "status": r[4]} for r in cursor.fetchall()]
