@@ -110,6 +110,11 @@
                 opacity: 0.5;
             }
         }
+
+        /* Smooth Transition for Sidebar */
+        #sidebar {
+            transition: width 0.3s ease, padding 0.3s ease;
+        }
     </style>
 </head>
 
@@ -155,25 +160,53 @@
 
     <div class="flex h-[calc(100vh-73px)]">
         <!-- Sidebar -->
-        <aside class="w-64 border-r border-slate-800 p-6 space-y-2 shrink-0 overflow-y-auto no-scrollbar">
+        <aside id="sidebar"
+            class="w-64 border-r border-slate-800 p-6 flex flex-col gap-2 shrink-0 overflow-y-auto no-scrollbar">
+            <!-- Toggle Button -->
+            <button id="toggle-sidebar"
+                class="w-full text-left px-4 py-3 rounded-xl flex items-center justify-start gap-3 transition-colors hover:bg-slate-800 text-slate-400 mb-4"
+                title="Toggle Sidebar">
+                <i data-lucide="panel-left-close" id="toggle-icon" class="w-5 h-5 shrink-0"></i>
+                <span class="sidebar-text font-bold uppercase tracking-widest text-[10px]">Collapse</span>
+            </button>
+
+            <!-- Menu Items -->
             <button
-                class="nav-btn w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 transition-colors hover:bg-slate-800"
-                data-section="dashboard"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard</button>
+                class="nav-btn w-full px-4 py-3 rounded-xl flex items-center justify-start gap-3 transition-colors hover:bg-slate-800"
+                data-section="dashboard" title="Dashboard">
+                <i data-lucide="layout-dashboard" class="w-5 h-5 shrink-0"></i>
+                <span class="sidebar-text font-medium whitespace-nowrap">Dashboard</span>
+            </button>
             <button
-                class="nav-btn w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 transition-colors hover:bg-slate-800"
-                data-section="config"><i data-lucide="settings" class="w-4 h-4"></i> SMTP Settings</button>
+                class="nav-btn w-full px-4 py-3 rounded-xl flex items-center justify-start gap-3 transition-colors hover:bg-slate-800"
+                data-section="config" title="SMTP Settings">
+                <i data-lucide="settings" class="w-5 h-5 shrink-0"></i>
+                <span class="sidebar-text font-medium whitespace-nowrap">SMTP Settings</span>
+            </button>
             <button
-                class="nav-btn w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 transition-colors hover:bg-slate-800"
-                data-section="template"><i data-lucide="file-code" class="w-4 h-4"></i> Templates & Attachments</button>
+                class="nav-btn w-full px-4 py-3 rounded-xl flex items-center justify-start gap-3 transition-colors hover:bg-slate-800"
+                data-section="template" title="Templates">
+                <i data-lucide="file-code" class="w-5 h-5 shrink-0"></i>
+                <span class="sidebar-text font-medium whitespace-nowrap">Templates</span>
+            </button>
             <button
-                class="nav-btn w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 transition-colors hover:bg-slate-800"
-                data-section="recipients"><i data-lucide="users" class="w-4 h-4"></i> Recipients</button>
+                class="nav-btn w-full px-4 py-3 rounded-xl flex items-center justify-start gap-3 transition-colors hover:bg-slate-800"
+                data-section="recipients" title="Recipients">
+                <i data-lucide="users" class="w-5 h-5 shrink-0"></i>
+                <span class="sidebar-text font-medium whitespace-nowrap">Recipients</span>
+            </button>
             <button
-                class="nav-btn w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 transition-colors hover:bg-slate-800"
-                data-section="history"><i data-lucide="history" class="w-4 h-4"></i> Job History</button>
+                class="nav-btn w-full px-4 py-3 rounded-xl flex items-center justify-start gap-3 transition-colors hover:bg-slate-800"
+                data-section="history" title="Job History">
+                <i data-lucide="history" class="w-5 h-5 shrink-0"></i>
+                <span class="sidebar-text font-medium whitespace-nowrap">Job History</span>
+            </button>
             <button
-                class="nav-btn w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 transition-colors hover:bg-slate-800"
-                data-section="logs"><i data-lucide="terminal" class="w-4 h-4"></i> Logs</button>
+                class="nav-btn w-full px-4 py-3 rounded-xl flex items-center justify-start gap-3 transition-colors hover:bg-slate-800"
+                data-section="logs" title="System Logs">
+                <i data-lucide="terminal" class="w-5 h-5 shrink-0"></i>
+                <span class="sidebar-text font-medium whitespace-nowrap">Logs</span>
+            </button>
         </aside>
 
         <!-- Main Content -->
@@ -279,6 +312,7 @@
                             <input type="hidden" id="active-plain-hidden" name="EMAIL_CONTENT.plain_path">
                         </div>
 
+                        <!-- SMTP Buttons -->
                         <div class="flex gap-4 pt-4">
                             <button type="button" id="test-smtp-btn"
                                 class="w-1/3 bg-slate-700 hover:bg-slate-600 py-5 rounded-2xl font-black shadow-xl active:scale-95 transition-all text-[11px]"><i
@@ -291,7 +325,7 @@
                 </form>
             </section>
 
-            <!-- Template Editor & Attachments -->
+            <!-- Template Editor & Attachments Section -->
             <section id="section-template" class="hidden h-full flex flex-col space-y-6">
                 <div class="flex justify-between items-center">
                     <h2 class="text-3xl font-black">Templates & Attachments</h2>
@@ -319,7 +353,8 @@
                     </div>
                     <div class="col-span-9 flex flex-col gap-6">
                         <textarea id="template-editor"
-                            class="w-full flex-1 bg-slate-950 text-slate-300 font-mono p-8 rounded-3xl border border-slate-800 outline-none resize-none shadow-inner text-sm"></textarea>
+                            class="w-full flex-1 bg-slate-950 text-slate-300 font-mono p-8 rounded-3xl border border-slate-800 outline-none resize-none shadow-inner text-sm"
+                            placeholder="Paste HTML/Text content here..."></textarea>
 
                         <!-- ATTACHMENTS SUB-SECTION -->
                         <div class="glass-card rounded-3xl p-6 border border-slate-800">
@@ -332,13 +367,15 @@
                                     <input type="file" id="attachment-input" multiple>
                                 </label>
                             </div>
-                            <div id="attachments-list" class="space-y-2 max-h-32 overflow-y-auto no-scrollbar"></div>
+                            <div id="attachments-list" class="space-y-2 max-h-32 overflow-y-auto no-scrollbar">
+                                <!-- Attachment items populate here -->
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Recipients -->
+            <!-- Recipients Section -->
             <section id="section-recipients" class="hidden space-y-6">
                 <div class="flex justify-between items-center">
                     <h2 class="text-3xl font-black">Recipients</h2>
@@ -371,7 +408,7 @@
                 </div>
             </section>
 
-            <!-- Job History -->
+            <!-- Job History Section -->
             <section id="section-history" class="hidden space-y-6">
                 <div class="flex justify-between items-center">
                     <h2 class="text-3xl font-black">Job History</h2>
@@ -398,7 +435,7 @@
                 </div>
             </section>
 
-            <!-- Logs -->
+            <!-- Logs Section -->
             <section id="section-logs" class="hidden space-y-4">
                 <div class="flex justify-between items-center">
                     <h2 class="text-3xl font-black text-slate-200">Live Logs</h2>
@@ -422,6 +459,32 @@
 
         function notify(msg) { $('#toast-msg').text(msg); $('#toast').addClass('show'); setTimeout(() => $('#toast').removeClass('show'), 3000); }
 
+        // --- SIDEBAR TOGGLE & NAVIGATION ---
+        const sidebar = $('#sidebar');
+
+        function applySidebarState(collapsed) {
+            if (collapsed) {
+                sidebar.removeClass('w-64 p-6').addClass('w-20 p-4 items-center');
+                $('.sidebar-text').addClass('hidden');
+                $('.nav-btn').removeClass('justify-start px-4').addClass('justify-center px-0');
+                $('#toggle-sidebar').removeClass('justify-start px-4').addClass('justify-center px-0');
+                $('#toggle-icon').attr('data-lucide', 'panel-left-open');
+            } else {
+                sidebar.removeClass('w-20 p-4 items-center').addClass('w-64 p-6');
+                $('.sidebar-text').removeClass('hidden');
+                $('.nav-btn').removeClass('justify-center px-0').addClass('justify-start px-4');
+                $('#toggle-sidebar').removeClass('justify-center px-0').addClass('justify-start px-4');
+                $('#toggle-icon').attr('data-lucide', 'panel-left-close');
+            }
+            lucide.createIcons();
+        }
+
+        $('#toggle-sidebar').click(() => {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            localStorage.setItem('sidebarCollapsed', !isCollapsed);
+            applySidebarState(!isCollapsed);
+        });
+
         function switchSection(id) {
             $('.nav-btn').removeClass('bg-blue-600/20 text-blue-400 font-bold border border-blue-500/20');
             $(`.nav-btn[data-section="${id}"]`).addClass('bg-blue-600/20 text-blue-400 font-bold border border-blue-500/20');
@@ -433,8 +496,12 @@
         }
 
         $('.nav-btn').click(function () { switchSection($(this).data('section')); });
+
+        // Initial Sidebar & Section setup
+        applySidebarState(localStorage.getItem('sidebarCollapsed') === 'true');
         switchSection(localStorage.getItem('activeSection') || 'dashboard');
 
+        // --- CONFIG & SMTP TESTER ---
         $('#toggle-pass').click(function () {
             const input = $('#smtp-pass');
             const type = input.attr('type') === 'password' ? 'text' : 'password';
@@ -443,7 +510,6 @@
             lucide.createIcons();
         });
 
-        // --- CONFIG & SMTP TESTER ---
         function loadConfig() {
             $.get('/api/config', (data) => {
                 if (!data) return;
@@ -615,15 +681,14 @@
         }
         $('#refresh-history-btn').click(loadHistory);
 
-        // --- ENGINE CONTROLS & UNCONDITIONAL STATE UPDATING ---
-        $('#btn-start').click(() => $.post('/api/mailer/start', () => { switchSection('dashboard'); notify('Started'); }).fail(e => notify(e.responseJSON?.error || "Error")));
-        $('#btn-stop').click(() => $.post('/api/mailer/stop', () => notify('Stopping Engine...')));
-        $('#btn-retry').click(() => $.post('/api/mailer/retry', () => { switchSection('dashboard'); notify('Retrying Failed Emails...'); }).fail(e => notify(e.responseJSON?.error || "Error")));
+        // --- ENGINE CONTROLS ---
+        $('#btn-start').click(() => $.post('/api/mailer/start', () => { switchSection('dashboard'); notify('Started'); }).fail(e => notify(e.responseJSON?.error || "Error Starting")));
+        $('#btn-stop').click(() => $.post('/api/mailer/stop', () => notify('Stop Signal Sent')));
+        $('#btn-retry').click(() => $.post('/api/mailer/retry', () => { switchSection('dashboard'); notify('Retrying Failed...'); }).fail(e => notify(e.responseJSON?.error || "Error")));
 
         setInterval(() => {
             $.get('/api/mailer/status', (data) => {
                 if (data.progress) {
-                    // Update Dashboard Stats unconditionally
                     $('#stat-sent').text(data.progress.sent || 0);
                     $('#stat-failed').text(data.progress.failed || 0);
 
@@ -636,7 +701,6 @@
                         $('#current-op').text('Sending: ' + (data.progress.current_email || '...'));
                     }
 
-                    // Update Recipient Table unconditionally
                     if (data.progress.recipient_statuses) {
                         Object.entries(data.progress.recipient_statuses).forEach(([email, status]) => {
                             const col = $(`tr[data-email="${email.replace(/["\\]/g, '\\$&')}"] .status-col`);
@@ -652,7 +716,6 @@
                     }
                 }
 
-                // Toggle Start/Stop/Retry Buttons based on engine state
                 if (data.running) {
                     $('#btn-start').addClass('hidden');
                     $('#btn-retry').addClass('hidden');
@@ -679,7 +742,6 @@
                 }
             });
 
-            // Logs - Reverse order for Top-Down Tail
             $.get('/api/logs', (d) => {
                 const v = $('#log-viewer');
                 if (d) {
@@ -689,7 +751,7 @@
                     v.text('');
                 }
             });
-        }, 1000); // Check every 1s for immediate UI feedback
+        }, 1000);
 
         $('#clear-logs-btn').click(() => { $.post('/api/logs/clear', () => { $('#log-viewer').text(''); notify('Cleared'); }); });
 
