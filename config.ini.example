@@ -1,14 +1,14 @@
 [SMTP]
-host = smtp.gmail.com
+host = mail.example.com
 port = 587
-username = your_email@gmail.com
+username = your_email@example.com
 password = your_app_password
 use_tls = True
 use_ssl = False
 
 [SENDER]
 name = Professional Mailer
-email = your_email@gmail.com
+email = your_email@example.com
 
 [EMAIL_CONTENT]
 subject = Notification from Flask Mailer

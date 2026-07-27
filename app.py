@@ -48,6 +48,38 @@ def handle_config():
     config_mgr.update_from_dict(request.json)
     return jsonify({"status": "success"})
 
+@app.route('/api/config/reset', methods=['POST'])
+def reset_config():
+    try:
+        config_mgr.reset_config()
+        return jsonify({"status": "success", "message": "Configuration reset to defaults"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/system/clean-slate', methods=['POST'])
+def clean_slate():
+    global recipients_list, mailer_engine
+    try:
+        config_mgr.wipe_database()
+        recipients_list = []
+        mailer_engine = None
+
+        for folder in [TEMPLATE_FOLDER, ATTACHMENT_FOLDER]:
+            if os.path.exists(folder):
+                for fname in os.listdir(folder):
+                    fpath = os.path.join(folder, fname)
+                    if os.path.isfile(fpath):
+                        os.remove(fpath)
+
+        if os.path.exists(log_file):
+            with open(log_file, 'w') as f:
+                f.truncate(0)
+
+        return jsonify({"status": "success", "message": "Clean Slate Reset completed successfully"})
+    except Exception as e:
+        logger.exception("CRITICAL CLEAN SLATE ERROR")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 # --- SMTP TESTER ---
 @app.route('/api/test-smtp', methods=['POST'])
 def test_smtp():
@@ -79,18 +111,36 @@ def test_smtp():
 def handle_attachments():
     if request.method == 'POST':
         files = request.files.getlist('files')
+        selected = config_mgr.get_selected_attachments()
         for f in files:
-            f.save(os.path.join(ATTACHMENT_FOLDER, secure_filename(f.filename)))
-        return jsonify({"status": "success"})
+            fname = secure_filename(f.filename)
+            f.save(os.path.join(ATTACHMENT_FOLDER, fname))
+            if fname not in selected:
+                selected.append(fname)
+        config_mgr.save_selected_attachments(selected)
+        return jsonify({"status": "success", "files": os.listdir(ATTACHMENT_FOLDER), "selected": selected})
     else:
         files = os.listdir(ATTACHMENT_FOLDER)
-        return jsonify({"files": files})
+        selected = config_mgr.get_selected_attachments()
+        return jsonify({"files": files, "selected": selected})
+
+@app.route('/api/attachments/select', methods=['POST'])
+def select_attachments():
+    data = request.json or {}
+    selected = data.get('selected', [])
+    config_mgr.save_selected_attachments(selected)
+    return jsonify({"status": "success", "selected": selected})
 
 @app.route('/api/attachments/<filename>', methods=['DELETE'])
 def delete_attachment(filename):
-    path = os.path.join(ATTACHMENT_FOLDER, secure_filename(filename))
+    sec_filename = secure_filename(filename)
+    path = os.path.join(ATTACHMENT_FOLDER, sec_filename)
     if os.path.exists(path):
         os.remove(path)
+    selected = config_mgr.get_selected_attachments()
+    if sec_filename in selected:
+        selected.remove(sec_filename)
+        config_mgr.save_selected_attachments(selected)
     return jsonify({"status": "success"})
 
 # --- TEMPLATES API ---
@@ -110,6 +160,15 @@ def save_template():
         f.write(content)
     config_mgr.add_template(name, filename, t_type)
     return jsonify({"status": "success", "filename": filename})
+
+@app.route('/api/templates/<filename>', methods=['DELETE'])
+def delete_template(filename):
+    sec_filename = secure_filename(filename)
+    path = os.path.join(TEMPLATE_FOLDER, sec_filename)
+    if os.path.exists(path):
+        os.remove(path)
+    config_mgr.delete_template(sec_filename)
+    return jsonify({"status": "success"})
 
 @app.route('/api/template/content', methods=['GET'])
 def get_template_content():
@@ -190,7 +249,14 @@ def start_mailer():
 
         subject = current_config.get('EMAIL_CONTENT', {}).get('subject', 'No Subject')
         job_id = config_mgr.add_job(subject)
-        attachments = [os.path.join(ATTACHMENT_FOLDER, f) for f in os.listdir(ATTACHMENT_FOLDER)]
+        
+        # Filter attachments based on user selection
+        selected_filenames = set(config_mgr.get_selected_attachments())
+        attachments = [
+            os.path.join(ATTACHMENT_FOLDER, f) 
+            for f in os.listdir(ATTACHMENT_FOLDER) 
+            if f in selected_filenames
+        ]
         
         mailer_engine = MailerEngine(current_config, logger)
         
@@ -220,7 +286,13 @@ def retry_mailer():
         
         subject = current_config.get('EMAIL_CONTENT', {}).get('subject', 'No Subject')
         job_id = config_mgr.add_job(subject + " (Retry)")
-        attachments = [os.path.join(ATTACHMENT_FOLDER, f) for f in os.listdir(ATTACHMENT_FOLDER)]
+        
+        selected_filenames = set(config_mgr.get_selected_attachments())
+        attachments = [
+            os.path.join(ATTACHMENT_FOLDER, f) 
+            for f in os.listdir(ATTACHMENT_FOLDER) 
+            if f in selected_filenames
+        ]
         
         mailer_engine = MailerEngine(current_config, logger)
         

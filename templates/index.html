@@ -8,16 +8,18 @@
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Ace Code Editor -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
     <style>
         body {
-            background-color: #0f172a;
-            color: #e2e8f0;
+            background-color: #090d16;
+            color: #f1f5f9;
         }
 
         .glass-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .no-scrollbar::-webkit-scrollbar {
@@ -34,44 +36,33 @@
             word-wrap: break-word;
         }
 
-        .modal {
+        .custom-modal {
             display: none;
             position: fixed;
-            z-index: 200;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(8px);
-        }
-
-        .modal-content {
-            background: white;
-            margin: 2% auto;
-            width: 90%;
-            height: 90%;
-            border-radius: 1.5rem;
-            overflow: hidden;
-            position: relative;
+            z-index: 600;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(6px);
+            align-items: center;
+            justify-content: center;
         }
 
         .toast {
             position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            z-index: 300;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 700;
             background: #1e293b;
             border: 1px solid #334155;
-            padding: 1rem 1.5rem;
-            border-radius: 1rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.5rem;
             transform: translateY(100px);
             opacity: 0;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.3s ease;
         }
 
         .toast.show {
@@ -85,17 +76,17 @@
 
         .status-sent {
             color: #10b981 !important;
-            font-weight: bold;
+            font-weight: 600;
         }
 
         .status-failed {
             color: #ef4444 !important;
-            font-weight: bold;
+            font-weight: 600;
         }
 
         .status-sending {
             color: #3b82f6 !important;
-            font-weight: bold;
+            font-weight: 600;
             animation: pulse 2s infinite;
         }
 
@@ -111,295 +102,457 @@
             }
         }
 
-        /* Smooth Transition for Sidebar */
         #sidebar {
-            transition: width 0.3s ease, padding 0.3s ease;
+            transition: width 0.25s ease, padding 0.25s ease;
+            background: #0d1322;
+        }
+
+        #editor-container {
+            width: 100%;
+            height: 100%;
+            border-radius: 0.75rem;
         }
     </style>
 </head>
 
-<body class="font-sans antialiased">
-    <!-- Preview Modal -->
-    <div id="preview-modal" class="modal">
-        <div class="modal-content flex flex-col">
-            <div class="p-4 bg-slate-100 border-b flex justify-between items-center text-slate-800">
-                <span class="font-bold flex items-center gap-2"><i data-lucide="eye" class="w-4 h-4"></i> Sandbox
-                    Preview</span>
-                <button id="close-modal" class="p-2 hover:bg-slate-200 rounded-full transition-colors"><i
-                        data-lucide="x"></i></button>
+<body class="font-sans antialiased text-xs">
+    <!-- Custom Confirm Modal -->
+    <div id="modal-confirm" class="custom-modal flex">
+        <div
+            class="glass-card bg-slate-900 p-6 rounded-2xl w-full max-w-md border border-slate-700 shadow-2xl space-y-4">
+            <div class="flex items-center gap-3 text-amber-400 font-bold text-sm">
+                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                <span id="confirm-title">Confirmation</span>
             </div>
-            <iframe id="preview-frame" class="w-full flex-1 border-none bg-white"></iframe>
+            <p id="confirm-msg" class="text-slate-300 text-xs leading-relaxed"></p>
+            <div class="flex justify-end gap-3 pt-2">
+                <button id="btn-modal-cancel"
+                    class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-xs font-bold transition-all">Cancel</button>
+                <button id="btn-modal-proceed"
+                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all">Confirm</button>
+            </div>
         </div>
     </div>
 
-    <!-- Navigation -->
-    <nav class="sticky top-0 z-50 glass-card px-8 py-4 flex justify-between items-center border-b border-slate-700">
-        <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg"><i
-                    data-lucide="send" class="text-white"></i></div>
-            <h1 class="text-xl font-bold tracking-tight">SteveSplash Pro<span class="text-blue-500">Mailer</span></h1>
+    <!-- Custom Prompt Modal -->
+    <div id="modal-prompt" class="custom-modal flex">
+        <div
+            class="glass-card bg-slate-900 p-6 rounded-2xl w-full max-w-md border border-slate-700 shadow-2xl space-y-4">
+            <div class="flex items-center gap-3 text-blue-400 font-bold text-sm">
+                <i data-lucide="edit-3" class="w-5 h-5"></i>
+                <span id="prompt-title">Input Required</span>
+            </div>
+            <p id="prompt-msg" class="text-slate-300 text-xs"></p>
+            <input type="text" id="prompt-input"
+                class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-blue-500">
+            <div class="flex justify-end gap-3 pt-2">
+                <button id="btn-prompt-cancel"
+                    class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-xs font-bold transition-all">Cancel</button>
+                <button id="btn-prompt-submit"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all">Submit</button>
+            </div>
         </div>
-        <div class="flex gap-3">
-            <!-- RETRY BUTTON -->
+    </div>
+
+    <!-- Full-Screen Template Editor Workspace Overlay -->
+    <div id="full-editor-workspace" class="hidden fixed inset-0 z-[300] bg-[#090d16] flex flex-col">
+        <!-- Workspace Header Bar -->
+        <div class="px-6 py-3 bg-slate-900 border-b border-slate-800 flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-3">
+                <button id="btn-close-workspace"
+                    class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Templates
+                </button>
+                <span id="workspace-tpl-title" class="font-bold text-sm text-slate-100">Editing Template</span>
+                <span id="workspace-tpl-badge"
+                    class="text-[10px] bg-blue-900/40 text-blue-400 font-mono font-bold px-2 py-0.5 rounded uppercase">HTML</span>
+            </div>
+
+            <!-- View Toggle Switcher: Code <=> Preview -->
+            <div class="flex bg-slate-950 p-1 rounded-lg border border-slate-800 gap-1">
+                <button id="btn-view-code"
+                    class="px-4 py-1 rounded-md text-xs font-bold transition-all bg-blue-600 text-white flex items-center gap-1.5">
+                    <i data-lucide="code" class="w-3.5 h-3.5"></i> Code View
+                </button>
+                <button id="btn-view-preview"
+                    class="px-4 py-1 rounded-md text-xs font-bold transition-all text-slate-400 hover:text-white flex items-center gap-1.5">
+                    <i data-lucide="eye" class="w-3.5 h-3.5"></i> Live Preview (Interactive)
+                </button>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button id="workspace-save-btn"
+                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all">
+                    <i data-lucide="save" class="w-4 h-4"></i> Save File
+                </button>
+                <button id="workspace-delete-btn"
+                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
+                </button>
+            </div>
+        </div>
+
+        <!-- Single Canvas Editor Workspace Area -->
+        <div class="flex-1 p-4 min-h-0 bg-[#090d16] relative">
+            <!-- Code View Pane -->
+            <div id="workspace-code-pane"
+                class="w-full h-full glass-card rounded-xl p-3 border border-slate-800 flex flex-col">
+                <div class="flex-1 relative min-h-0">
+                    <div id="editor-container" class="w-full h-full rounded-lg"></div>
+                </div>
+            </div>
+
+            <!-- Live Preview Pane (Editable Directly) -->
+            <div id="workspace-preview-pane"
+                class="hidden w-full h-full glass-card rounded-xl p-3 border border-slate-800 flex flex-col bg-white">
+                <div class="text-[10px] text-slate-500 font-bold mb-2 flex items-center justify-between border-b pb-1">
+                    <span>EDITABLE LIVE PREVIEW (Click text elements to edit content visually)</span>
+                    <span class="text-emerald-600 font-mono">WYSIWYG Sync Active</span>
+                </div>
+                <iframe id="live-preview-frame" class="w-full flex-1 border-none bg-white rounded-lg"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- App Top Header -->
+    <nav class="sticky top-0 z-50 glass-card px-6 py-3 flex justify-between items-center border-b border-slate-800/80">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-md"><i data-lucide="send"
+                    class="text-white w-4 h-4"></i></div>
+            <h1 class="text-base font-bold tracking-tight">SteveSplash Pro<span class="text-blue-500">Mailer</span></h1>
+        </div>
+        <div class="flex gap-2">
             <button id="btn-retry"
-                class="hidden bg-yellow-600 hover:bg-yellow-700 px-8 py-2 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95">
-                <i data-lucide="refresh-cw" class="w-4 h-4 fill-white"></i> RETRY FAILED
+                class="hidden bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-all active:scale-95 text-xs">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> RETRY FAILED
             </button>
-            <!-- STOP BUTTON -->
             <button id="btn-stop"
-                class="hidden bg-red-600 hover:bg-red-700 px-8 py-2 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95">
-                <i data-lucide="square" class="w-4 h-4 fill-white"></i> STOP ENGINE
+                class="hidden bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 transition-all active:scale-95 text-xs">
+                <i data-lucide="square" class="w-3.5 h-3.5"></i> STOP ENGINE
             </button>
-            <!-- START BUTTON -->
             <button id="btn-start"
-                class="bg-blue-600 hover:bg-blue-700 px-8 py-2 rounded-xl font-bold flex items-center gap-2 transition-all active:scale-95">
-                <i data-lucide="play" class="w-4 h-4 fill-white"></i> START DISPATCH
+                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold flex items-center gap-2 transition-all active:scale-95 text-xs">
+                <i data-lucide="play" class="w-3.5 h-3.5"></i> START DISPATCH
             </button>
         </div>
     </nav>
 
-    <div class="flex h-[calc(100vh-73px)]">
-        <!-- Sidebar -->
+    <div class="flex h-[calc(100vh-57px)]">
+        <!-- Sidebar Navigation -->
         <aside id="sidebar"
-            class="w-64 border-r border-slate-800 p-6 flex flex-col gap-2 shrink-0 overflow-y-auto no-scrollbar">
-            <!-- Toggle Button -->
+            class="w-56 border-r border-slate-800/80 p-4 flex flex-col gap-1 shrink-0 overflow-y-auto no-scrollbar">
             <button id="toggle-sidebar"
-                class="w-full text-left px-4 py-3 rounded-xl flex items-center justify-start gap-3 transition-colors hover:bg-slate-800 text-slate-400 mb-4"
+                class="w-full text-left px-3 py-2 rounded-lg flex items-center justify-start gap-3 transition-colors hover:bg-slate-800 text-slate-400 mb-2"
                 title="Toggle Sidebar">
-                <i data-lucide="panel-left-close" id="toggle-icon" class="w-5 h-5 shrink-0"></i>
-                <span class="sidebar-text font-bold uppercase tracking-widest text-[10px]">Collapse</span>
+                <i data-lucide="panel-left-close" id="toggle-icon" class="w-4 h-4 shrink-0"></i>
+                <span class="sidebar-text font-bold uppercase tracking-wider text-[10px]">Collapse</span>
             </button>
 
-            <!-- Menu Items -->
             <button
-                class="nav-btn w-full px-4 py-3 rounded-xl flex items-center justify-start gap-3 transition-colors hover:bg-slate-800"
+                class="nav-btn w-full px-3 py-2 rounded-lg flex items-center justify-start gap-3 transition-colors hover:bg-slate-800/80"
                 data-section="dashboard" title="Dashboard">
-                <i data-lucide="layout-dashboard" class="w-5 h-5 shrink-0"></i>
+                <i data-lucide="layout-dashboard" class="w-4 h-4 shrink-0"></i>
                 <span class="sidebar-text font-medium whitespace-nowrap">Dashboard</span>
             </button>
             <button
-                class="nav-btn w-full px-4 py-3 rounded-xl flex items-center justify-start gap-3 transition-colors hover:bg-slate-800"
-                data-section="config" title="SMTP Settings">
-                <i data-lucide="settings" class="w-5 h-5 shrink-0"></i>
-                <span class="sidebar-text font-medium whitespace-nowrap">SMTP Settings</span>
+                class="nav-btn w-full px-3 py-2 rounded-lg flex items-center justify-start gap-3 transition-colors hover:bg-slate-800/80"
+                data-section="config" title="Mailer Settings">
+                <i data-lucide="settings" class="w-4 h-4 shrink-0"></i>
+                <span class="sidebar-text font-medium whitespace-nowrap">Mailer Settings</span>
             </button>
             <button
-                class="nav-btn w-full px-4 py-3 rounded-xl flex items-center justify-start gap-3 transition-colors hover:bg-slate-800"
-                data-section="template" title="Templates">
-                <i data-lucide="file-code" class="w-5 h-5 shrink-0"></i>
-                <span class="sidebar-text font-medium whitespace-nowrap">Templates</span>
+                class="nav-btn w-full px-3 py-2 rounded-lg flex items-center justify-start gap-3 transition-colors hover:bg-slate-800/80"
+                data-section="template" title="Email Template">
+                <i data-lucide="file-code" class="w-4 h-4 shrink-0"></i>
+                <span class="sidebar-text font-medium whitespace-nowrap">Email Template</span>
             </button>
             <button
-                class="nav-btn w-full px-4 py-3 rounded-xl flex items-center justify-start gap-3 transition-colors hover:bg-slate-800"
+                class="nav-btn w-full px-3 py-2 rounded-lg flex items-center justify-start gap-3 transition-colors hover:bg-slate-800/80"
+                data-section="attachments" title="Email Attachment">
+                <i data-lucide="paperclip" class="w-4 h-4 shrink-0"></i>
+                <span class="sidebar-text font-medium whitespace-nowrap">Email Attachment</span>
+            </button>
+            <button
+                class="nav-btn w-full px-3 py-2 rounded-lg flex items-center justify-start gap-3 transition-colors hover:bg-slate-800/80"
                 data-section="recipients" title="Recipients">
-                <i data-lucide="users" class="w-5 h-5 shrink-0"></i>
+                <i data-lucide="users" class="w-4 h-4 shrink-0"></i>
                 <span class="sidebar-text font-medium whitespace-nowrap">Recipients</span>
             </button>
             <button
-                class="nav-btn w-full px-4 py-3 rounded-xl flex items-center justify-start gap-3 transition-colors hover:bg-slate-800"
+                class="nav-btn w-full px-3 py-2 rounded-lg flex items-center justify-start gap-3 transition-colors hover:bg-slate-800/80"
                 data-section="history" title="Job History">
-                <i data-lucide="history" class="w-5 h-5 shrink-0"></i>
+                <i data-lucide="history" class="w-4 h-4 shrink-0"></i>
                 <span class="sidebar-text font-medium whitespace-nowrap">Job History</span>
             </button>
             <button
-                class="nav-btn w-full px-4 py-3 rounded-xl flex items-center justify-start gap-3 transition-colors hover:bg-slate-800"
+                class="nav-btn w-full px-3 py-2 rounded-lg flex items-center justify-start gap-3 transition-colors hover:bg-slate-800/80"
                 data-section="logs" title="System Logs">
-                <i data-lucide="terminal" class="w-5 h-5 shrink-0"></i>
+                <i data-lucide="terminal" class="w-4 h-4 shrink-0"></i>
                 <span class="sidebar-text font-medium whitespace-nowrap">Logs</span>
+            </button>
+            <button
+                class="nav-btn w-full px-3 py-2 rounded-lg flex items-center justify-start gap-3 transition-colors hover:bg-slate-800/80 text-red-400"
+                data-section="danger" title="Danger Zone">
+                <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0 text-red-500"></i>
+                <span class="sidebar-text font-medium whitespace-nowrap text-red-400">Danger Zone</span>
             </button>
         </aside>
 
-        <!-- Main Content -->
-        <main class="flex-1 overflow-y-auto p-10 no-scrollbar">
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto p-6 no-scrollbar">
             <!-- Dashboard Section -->
-            <section id="section-dashboard" class="space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-                    <div class="glass-card p-8 rounded-3xl"><i data-lucide="check-circle"
-                            class="mx-auto mb-2 text-green-500"></i>
-                        <p class="text-slate-500 text-xs uppercase font-black tracking-widest">Sent</p>
-                        <h2 id="stat-sent" class="text-5xl font-black">0</h2>
+            <section id="section-dashboard" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                    <div class="glass-card p-5 rounded-2xl">
+                        <i data-lucide="check-circle" class="mx-auto mb-1 text-emerald-500 w-5 h-5"></i>
+                        <p class="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Sent</p>
+                        <h2 id="stat-sent" class="text-3xl font-black text-white mt-1">0</h2>
                     </div>
-                    <div class="glass-card p-8 rounded-3xl"><i data-lucide="x-circle"
-                            class="mx-auto mb-2 text-red-500"></i>
-                        <p class="text-slate-500 text-xs uppercase font-black tracking-widest">Failed</p>
-                        <h2 id="stat-failed" class="text-5xl font-black text-red-500">0</h2>
+                    <div class="glass-card p-5 rounded-2xl">
+                        <i data-lucide="x-circle" class="mx-auto mb-1 text-red-500 w-5 h-5"></i>
+                        <p class="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Failed</p>
+                        <h2 id="stat-failed" class="text-3xl font-black text-red-500 mt-1">0</h2>
                     </div>
-                    <div class="glass-card p-8 rounded-3xl"><i data-lucide="bar-chart"
-                            class="mx-auto mb-2 text-blue-500"></i>
-                        <p class="text-slate-500 text-xs uppercase font-black tracking-widest">Progress</p>
-                        <h2 id="stat-progress" class="text-5xl font-black text-blue-500">0%</h2>
+                    <div class="glass-card p-5 rounded-2xl">
+                        <i data-lucide="activity" class="mx-auto mb-1 text-blue-500 w-5 h-5"></i>
+                        <p class="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Progress</p>
+                        <h2 id="stat-progress" class="text-3xl font-black text-blue-500 mt-1">0%</h2>
                     </div>
                 </div>
-                <div class="glass-card rounded-[2rem] overflow-hidden p-10 space-y-4 shadow-xl">
-                    <div class="flex justify-between text-[10px] font-mono text-slate-500 uppercase tracking-widest">
+                <div class="glass-card rounded-2xl p-6 space-y-3">
+                    <div class="flex justify-between text-[10px] font-mono text-slate-400 uppercase tracking-wider">
                         <span id="current-op">System Idle</span><span id="stat-total-queue">0 Recipients</span>
                     </div>
                     <div class="w-full bg-slate-900 rounded-full h-2">
-                        <div id="progress-bar"
-                            class="bg-blue-600 h-full rounded-full transition-all duration-700 shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+                        <div id="progress-bar" class="bg-blue-600 h-full rounded-full transition-all duration-500"
                             style="width: 0%"></div>
                     </div>
                 </div>
             </section>
 
-            <!-- SMTP Settings Section -->
+            <!-- Mailer Settings Section (Sectioned Layout with Actions at Top) -->
             <section id="section-config" class="hidden space-y-6">
-                <div class="flex justify-between items-end">
-                    <h2 class="text-3xl font-black">Server Setup</h2>
-                    <label for="config-input"
-                        class="bg-slate-800 hover:bg-slate-700 px-6 py-3 rounded-2xl cursor-pointer border border-slate-700 flex items-center gap-2 transition-all">
-                        <i data-lucide="upload-cloud" class="w-4 h-4"></i> Import config.ini
-                        <input type="file" id="config-input" accept=".ini">
-                    </label>
-                </div>
-                <form id="form-config" class="grid grid-cols-2 gap-10 glass-card p-10 rounded-[2.5rem]">
-                    <div class="space-y-5">
-                        <div><label
-                                class="block text-[10px] text-slate-500 uppercase font-black ml-1 mb-1">Subject</label><input
-                                type="text" name="EMAIL_CONTENT.subject"
-                                class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 outline-none focus:border-blue-500"
-                                placeholder="Enter Email Subject"></div>
-                        <div><label
-                                class="block text-[10px] text-slate-500 uppercase font-black ml-1 mb-1">Host</label><input
-                                type="text" name="SMTP.host"
-                                class="w-full bg-slate-900/50 border border-slate-800 rounded-xl p-4 outline-none">
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div><label
-                                    class="block text-[10px] text-slate-500 uppercase font-black ml-1 mb-1">Port</label><input
-                                    type="number" name="SMTP.port"
-                                    class="w-full bg-slate-900/50 border border-slate-800 rounded-xl p-4 outline-none">
-                            </div>
-                            <div><label
-                                    class="block text-[10px] text-slate-500 uppercase font-black ml-1 mb-1">Mode</label><select
-                                    id="config-mode" name="EMAIL_CONTENT.mode"
-                                    class="w-full bg-slate-900/50 border border-slate-800 rounded-xl p-4 outline-none">
-                                    <option value="html">HTML</option>
-                                    <option value="plain">Text</option>
-                                </select></div>
-                        </div>
-                        <div><label
-                                class="block text-[10px] text-slate-500 uppercase font-black ml-1 mb-1">User</label><input
-                                type="text" name="SMTP.username"
-                                class="w-full bg-slate-900/50 border border-slate-800 rounded-xl p-4 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] text-slate-500 uppercase font-black ml-1 mb-1">Pass</label>
-                            <div class="relative">
-                                <input type="password" id="smtp-pass" name="SMTP.password"
-                                    class="w-full bg-slate-900/50 border border-slate-800 rounded-xl p-4 pr-12 outline-none">
-                                <button type="button" id="toggle-pass"
-                                    class="absolute right-4 top-4 text-slate-500 hover:text-white transition-colors"><i
-                                        data-lucide="eye" class="w-5 h-5"></i></button>
-                            </div>
-                        </div>
+                <!-- Header with Action Buttons at Top -->
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold">Mailer Settings</h2>
+                        <p class="text-slate-400 text-xs mt-0.5">Configure SMTP server, sender identities, templates,
+                            and attachment options.</p>
                     </div>
-                    <div class="space-y-5">
-                        <div><label class="block text-[10px] text-slate-500 uppercase font-black ml-1 mb-1">Sender
-                                Name</label><input type="text" name="SENDER.name"
-                                class="w-full bg-slate-900/50 border border-slate-800 rounded-xl p-4"></div>
-                        <div><label class="block text-[10px] text-slate-500 uppercase font-black ml-1 mb-1">Sender
-                                Email</label><input type="text" name="SENDER.email"
-                                class="w-full bg-slate-900/50 border border-slate-800 rounded-xl p-4"></div>
-                        <div>
-                            <label class="block text-[10px] text-slate-500 uppercase font-black ml-1 mb-1">Selected
-                                Template</label>
-                            <select id="active-tpl-selector"
-                                class="w-full bg-slate-900/50 border border-slate-800 rounded-xl p-4 text-blue-400 font-bold text-xs outline-none focus:border-blue-500">
-                                <option value="">-- Choose Template --</option>
-                            </select>
-                            <input type="hidden" id="active-path-hidden" name="EMAIL_CONTENT.html_path">
-                            <input type="hidden" id="active-plain-hidden" name="EMAIL_CONTENT.plain_path">
+                    <div class="flex gap-3">
+                        <button type="button" id="test-smtp-btn"
+                            class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl font-bold transition-all text-xs flex items-center gap-2">
+                            <i data-lucide="plug" class="w-4 h-4"></i> TEST SMTP
+                        </button>
+                        <button type="button" id="btn-save-config-top"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-bold transition-all text-xs flex items-center gap-2">
+                            <i data-lucide="save" class="w-4 h-4"></i> SAVE SETTINGS
+                        </button>
+                    </div>
+                </div>
+
+                <form id="form-config" class="space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Section Card 1: SMTP Server Credentials -->
+                        <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+                            <div
+                                class="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-blue-400 font-bold text-xs uppercase tracking-wider">
+                                <i data-lucide="server" class="w-4 h-4"></i> SMTP Connection
+                            </div>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 uppercase font-bold mb-1">SMTP
+                                        Host</label>
+                                    <input type="text" name="SMTP.host"
+                                        class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-blue-500">
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label
+                                            class="block text-[10px] text-slate-400 uppercase font-bold mb-1">Port</label>
+                                        <input type="number" name="SMTP.port"
+                                            class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-blue-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] text-slate-400 uppercase font-bold mb-1">Email
+                                            Mode</label>
+                                        <select id="config-mode" name="EMAIL_CONTENT.mode"
+                                            class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-blue-500">
+                                            <option value="html">HTML</option>
+                                            <option value="plain">Text</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-[10px] text-slate-400 uppercase font-bold mb-1">Username</label>
+                                    <input type="text" name="SMTP.username"
+                                        class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-[10px] text-slate-400 uppercase font-bold mb-1">Password</label>
+                                    <div class="relative">
+                                        <input type="password" id="smtp-pass" name="SMTP.password"
+                                            class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 pr-10 text-xs text-white outline-none focus:border-blue-500">
+                                        <button type="button" id="toggle-pass"
+                                            class="absolute right-3 top-2.5 text-slate-500 hover:text-white"><i
+                                                data-lucide="eye" class="w-4 h-4"></i></button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- SMTP Buttons -->
-                        <div class="flex gap-4 pt-4">
-                            <button type="button" id="test-smtp-btn"
-                                class="w-1/3 bg-slate-700 hover:bg-slate-600 py-5 rounded-2xl font-black shadow-xl active:scale-95 transition-all text-[11px]"><i
-                                    data-lucide="plug" class="w-4 h-4 inline mr-1"></i> TEST SMTP</button>
-                            <button type="submit"
-                                class="w-2/3 bg-blue-600 py-5 rounded-2xl font-black shadow-xl shadow-blue-900/20 active:scale-95 transition-all">SAVE
-                                SETTINGS</button>
+                        <!-- Section Card 2: Sender & Email Subject -->
+                        <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+                            <div
+                                class="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-emerald-400 font-bold text-xs uppercase tracking-wider">
+                                <i data-lucide="user-check" class="w-4 h-4"></i> Sender & Subject Info
+                            </div>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 uppercase font-bold mb-1">Sender
+                                        Name</label>
+                                    <input type="text" name="SENDER.name"
+                                        class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 uppercase font-bold mb-1">Sender
+                                        Email</label>
+                                    <input type="text" name="SENDER.email"
+                                        class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-[10px] text-slate-400 uppercase font-bold mb-1">Subject</label>
+                                    <input type="text" name="EMAIL_CONTENT.subject"
+                                        class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-white outline-none focus:border-blue-500"
+                                        placeholder="Enter Email Subject">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section Card 3: Active Template -->
+                        <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+                            <div
+                                class="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-purple-400 font-bold text-xs uppercase tracking-wider">
+                                <i data-lucide="file-text" class="w-4 h-4"></i> Active Template
+                            </div>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-[10px] text-slate-400 uppercase font-bold mb-1">Selected
+                                        Active Template</label>
+                                    <select id="active-tpl-selector"
+                                        class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-xs text-blue-400 font-bold outline-none focus:border-blue-500">
+                                        <option value="">-- Choose Template --</option>
+                                    </select>
+                                    <input type="hidden" id="active-path-hidden" name="EMAIL_CONTENT.html_path">
+                                    <input type="hidden" id="active-plain-hidden" name="EMAIL_CONTENT.plain_path">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section Card 4: Selective Email Attachments -->
+                        <div class="glass-card p-6 rounded-2xl border border-slate-800 space-y-4">
+                            <div
+                                class="flex items-center gap-2 pb-2 border-b border-slate-800/80 text-amber-400 font-bold text-xs uppercase tracking-wider">
+                                <i data-lucide="paperclip" class="w-4 h-4"></i> Selective Email Attachments
+                            </div>
+                            <div class="space-y-3">
+                                <div id="config-attachments-selector"
+                                    class="bg-slate-950 border border-slate-800 rounded-lg p-3 max-h-36 overflow-y-auto space-y-1.5 text-xs">
+                                    <!-- Checkboxes populated dynamically -->
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </form>
             </section>
 
-            <!-- Template Editor & Attachments Section -->
-            <section id="section-template" class="hidden h-full flex flex-col space-y-6">
+            <!-- Email Template Control Panel Section -->
+            <section id="section-template" class="hidden space-y-4">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-3xl font-black">Templates & Attachments</h2>
-                    <div class="flex gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold">Email Template Manager</h2>
+                        <p class="text-slate-400 text-xs mt-0.5">Manage, edit, and select email templates for dispatch.
+                        </p>
+                    </div>
+                    <div class="flex gap-2">
                         <label for="tpl-input"
-                            class="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl cursor-pointer border border-slate-700 flex items-center gap-2 text-xs font-bold transition-all">
-                            <i data-lucide="file-up" class="w-4 h-4"></i> Upload
+                            class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-lg cursor-pointer border border-slate-700 flex items-center gap-2 text-xs font-bold transition-all">
+                            <i data-lucide="upload" class="w-3.5 h-3.5"></i> Upload Template
                             <input type="file" id="tpl-input" accept=".html,.txt">
                         </label>
-                        <button id="open-preview" disabled
-                            class="bg-slate-800 border border-slate-700 px-6 py-2 rounded-xl text-xs font-bold opacity-50 cursor-not-allowed">PREVIEW</button>
-                        <button id="close-template"
-                            class="hidden bg-slate-700 px-6 py-2 rounded-xl text-xs font-bold active:scale-95 transition-all">CLOSE</button>
-                        <button id="update-template"
-                            class="hidden bg-green-600 px-6 py-2 rounded-xl text-xs font-bold active:scale-95 transition-all">UPDATE
-                            FILE</button>
-                        <button id="save-template"
-                            class="bg-blue-600 px-8 py-2 rounded-xl text-xs font-bold active:scale-95 transition-all">SAVE
-                            AS NEW</button>
+                        <button id="btn-new-template"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Create New
+                        </button>
                     </div>
                 </div>
-                <div class="flex-1 grid grid-cols-12 gap-8 min-h-0">
-                    <div id="template-list"
-                        class="col-span-3 glass-card rounded-3xl p-6 overflow-y-auto no-scrollbar border-slate-800 space-y-3">
-                    </div>
-                    <div class="col-span-9 flex flex-col gap-6">
-                        <textarea id="template-editor"
-                            class="w-full flex-1 bg-slate-950 text-slate-300 font-mono p-8 rounded-3xl border border-slate-800 outline-none resize-none shadow-inner text-sm"
-                            placeholder="Paste HTML/Text content here..."></textarea>
 
-                        <!-- ATTACHMENTS SUB-SECTION -->
-                        <div class="glass-card rounded-3xl p-6 border border-slate-800">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="font-bold text-sm uppercase tracking-widest text-slate-400">Mail Attachments
-                                </h3>
-                                <label for="attachment-input"
-                                    class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all">
-                                    <i data-lucide="paperclip" class="w-3 h-3 inline mr-1"></i> Add Files
-                                    <input type="file" id="attachment-input" multiple>
-                                </label>
-                            </div>
-                            <div id="attachments-list" class="space-y-2 max-h-32 overflow-y-auto no-scrollbar">
-                                <!-- Attachment items populate here -->
-                            </div>
-                        </div>
+                <!-- Template Cards Gallery Grid -->
+                <div id="template-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Cards populated dynamically -->
+                </div>
+            </section>
+
+            <!-- Email Attachment Section -->
+            <section id="section-attachments" class="hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold">Email Attachments</h2>
+                        <p class="text-slate-400 text-xs mt-0.5">Manage attachment files and choose which files are
+                            included in the email dispatch.</p>
+                    </div>
+                    <label for="attachment-input"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all flex items-center gap-2">
+                        <i data-lucide="paperclip" class="w-3.5 h-3.5"></i> Add Files
+                        <input type="file" id="attachment-input" multiple>
+                    </label>
+                </div>
+                <div class="glass-card rounded-2xl p-6 border border-slate-800">
+                    <div id="attachments-list" class="space-y-2 max-h-[500px] overflow-y-auto no-scrollbar">
+                        <!-- Attachment items with toggles -->
                     </div>
                 </div>
             </section>
 
             <!-- Recipients Section -->
-            <section id="section-recipients" class="hidden space-y-6">
+            <section id="section-recipients" class="hidden space-y-4">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-3xl font-black">Recipients</h2>
-                    <button id="clear-recipients-btn"
-                        class="bg-red-900/20 text-red-400 px-6 py-2 rounded-xl text-xs font-bold transition-all hover:bg-red-900/40">CLEAR
-                        CONTACTS</button>
+                    <h2 class="text-xl font-bold">Recipients</h2>
+                    <div class="flex gap-2">
+                        <label for="recipient-header-input"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-2">
+                            <i data-lucide="upload" class="w-3.5 h-3.5"></i> UPLOAD CONTACTS
+                            <input type="file" id="recipient-header-input" accept=".csv,.txt" class="hidden">
+                        </label>
+                        <button id="clear-recipients-btn"
+                            class="bg-red-900/20 text-red-400 border border-red-900/30 hover:bg-red-900/40 px-4 py-2 rounded-lg text-xs font-bold transition-all">CLEAR
+                            CONTACTS</button>
+                    </div>
                 </div>
+
+                <!-- Dashed Upload Zone (Hidden when contacts loaded) -->
                 <label for="recipient-input" id="recipient-drop"
-                    class="block border-2 border-dashed border-slate-800 rounded-[2.5rem] p-16 text-center hover:border-blue-600 cursor-pointer bg-slate-900/10 transition-all group">
+                    class="block border-2 border-dashed border-slate-800 rounded-2xl p-12 text-center hover:border-blue-600 cursor-pointer bg-slate-900/20 transition-all group">
                     <i data-lucide="users"
-                        class="w-12 h-12 mx-auto mb-4 text-slate-700 group-hover:text-blue-500 transition-colors"></i>
-                    <h3 class="text-xl font-bold">Import Contacts</h3>
-                    <p class="text-slate-500 text-sm">Drag & drop CSV or TXT file here</p>
+                        class="w-10 h-10 mx-auto mb-3 text-slate-600 group-hover:text-blue-500 transition-colors"></i>
+                    <h3 class="text-base font-bold text-slate-200">Import Contact List</h3>
+                    <p class="text-slate-500 text-xs mt-1">Click or Drag & Drop CSV or TXT file here</p>
                     <input type="file" id="recipient-input" accept=".csv,.txt">
                 </label>
-                <div class="glass-card rounded-3xl overflow-hidden shadow-2xl">
-                    <div class="max-h-[500px] overflow-y-auto no-scrollbar">
-                        <table class="w-full text-left text-sm" id="recipients-table">
+
+                <!-- Contacts Table Container -->
+                <div id="recipients-table-container" class="hidden glass-card rounded-2xl overflow-hidden shadow-xl">
+                    <div class="max-h-[550px] overflow-y-auto no-scrollbar">
+                        <table class="w-full text-left text-xs" id="recipients-table">
                             <thead
-                                class="text-slate-500 text-[10px] uppercase font-black tracking-widest border-b border-slate-800 sticky top-0 bg-[#1e293b]">
+                                class="text-slate-400 text-[10px] uppercase font-bold tracking-wider border-b border-slate-800 sticky top-0 bg-slate-900">
                                 <tr>
-                                    <th class="p-5">#</th>
-                                    <th class="p-5">Email Address</th>
-                                    <th class="p-5 text-right">Status</th>
+                                    <th class="p-4">#</th>
+                                    <th class="p-4">Email Address</th>
+                                    <th class="p-4 text-right">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="recipients-table-body" class="divide-y divide-slate-800/50"></tbody>
@@ -409,24 +562,24 @@
             </section>
 
             <!-- Job History Section -->
-            <section id="section-history" class="hidden space-y-6">
+            <section id="section-history" class="hidden space-y-4">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-3xl font-black">Job History</h2>
+                    <h2 class="text-xl font-bold">Dispatch Job History</h2>
                     <button id="refresh-history-btn"
-                        class="bg-slate-800 hover:bg-slate-700 px-6 py-2 rounded-xl text-xs font-bold transition-all"><i
-                            data-lucide="refresh-cw" class="w-4 h-4 inline mr-1"></i> Refresh</button>
+                        class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2"><i
+                            data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh</button>
                 </div>
-                <div class="glass-card rounded-3xl overflow-hidden shadow-2xl">
+                <div class="glass-card rounded-2xl overflow-hidden shadow-xl">
                     <div class="max-h-[600px] overflow-y-auto no-scrollbar">
-                        <table class="w-full text-left text-sm">
+                        <table class="w-full text-left text-xs">
                             <thead
-                                class="text-slate-500 text-[10px] uppercase font-black tracking-widest border-b border-slate-800 sticky top-0 bg-[#1e293b]">
+                                class="text-slate-400 text-[10px] uppercase font-bold tracking-wider border-b border-slate-800 sticky top-0 bg-slate-900">
                                 <tr>
-                                    <th class="p-5">Date</th>
-                                    <th class="p-5">Subject</th>
-                                    <th class="p-5">Sent</th>
-                                    <th class="p-5">Failed</th>
-                                    <th class="p-5 text-right">Status</th>
+                                    <th class="p-4">Date</th>
+                                    <th class="p-4">Subject</th>
+                                    <th class="p-4">Sent</th>
+                                    <th class="p-4">Failed</th>
+                                    <th class="p-4 text-right">Status</th>
                                 </tr>
                             </thead>
                             <tbody id="history-table-body" class="divide-y divide-slate-800/50"></tbody>
@@ -436,44 +589,201 @@
             </section>
 
             <!-- Logs Section -->
-            <section id="section-logs" class="hidden space-y-4">
+            <section id="section-logs" class="hidden space-y-3">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-3xl font-black text-slate-200">Live Logs</h2>
+                    <h2 class="text-xl font-bold text-slate-200">System Logs</h2>
                     <button id="clear-logs-btn"
-                        class="bg-red-900/20 text-red-400 px-6 py-2 rounded-xl border border-red-900/30 text-xs font-bold hover:bg-red-900/40 transition-all">CLEAR
+                        class="bg-red-900/20 text-red-400 border border-red-900/30 hover:bg-red-900/40 px-4 py-2 rounded-lg text-xs font-bold transition-all">CLEAR
                         LOGS</button>
                 </div>
                 <pre id="log-viewer"
-                    class="w-full h-[600px] bg-slate-950 p-8 rounded-[2rem] font-mono text-xs text-green-500/80 overflow-y-auto no-scrollbar border border-slate-900 shadow-2xl flex flex-col"></pre>
+                    class="w-full h-[550px] bg-slate-950 p-6 rounded-2xl font-mono text-[11px] text-emerald-400/90 overflow-y-auto no-scrollbar border border-slate-900 shadow-inner"></pre>
+            </section>
+
+            <!-- Danger Zone Section -->
+            <section id="section-danger" class="hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold text-red-500 flex items-center gap-2">
+                            <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500"></i> Danger Zone
+                        </h2>
+                        <p class="text-slate-400 text-xs mt-0.5">Perform system resets and database maintenance
+                            operations.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div
+                        class="glass-card p-6 rounded-2xl border border-amber-500/20 flex flex-col justify-between space-y-4">
+                        <div>
+                            <div
+                                class="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center mb-3 text-amber-500">
+                                <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                            </div>
+                            <h3 class="text-sm font-bold text-slate-100">Reset Configuration</h3>
+                            <p class="text-slate-400 text-xs mt-1 leading-relaxed">
+                                Resets all SMTP and sender configuration settings back to defaults or re-imports from
+                                <code class="text-amber-400 font-mono">config.ini</code>.
+                            </p>
+                        </div>
+                        <button id="btn-reset-config"
+                            class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 rounded-lg transition-all text-xs uppercase tracking-wider">
+                            RESET CONFIGURATION
+                        </button>
+                    </div>
+
+                    <div
+                        class="glass-card p-6 rounded-2xl border border-red-500/20 flex flex-col justify-between space-y-4">
+                        <div>
+                            <div
+                                class="w-10 h-10 bg-red-500/10 rounded-xl flex items-center justify-center mb-3 text-red-500">
+                                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                            </div>
+                            <h3 class="text-sm font-bold text-slate-100">Clean Slate Reset</h3>
+                            <p class="text-slate-400 text-xs mt-1 leading-relaxed">
+                                Permanently wipes the database, deletes all uploaded template files and attachments from
+                                disk, clears all job history, recipients, and log files.
+                            </p>
+                        </div>
+                        <button id="btn-clean-slate"
+                            class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg transition-all text-xs uppercase tracking-wider">
+                            WIPE EVERYTHING (CLEAN SLATE)
+                        </button>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
 
-    <div id="toast" class="toast"><i data-lucide="info" class="w-4 h-4 text-blue-500"></i><span id="toast-msg"
-            class="font-bold text-sm"></span></div>
+    <!-- Notification Toast -->
+    <div id="toast" class="toast">
+        <i data-lucide="info" class="w-4 h-4 text-blue-400"></i>
+        <span id="toast-msg" class="font-bold text-xs"></span>
+    </div>
 
     <script>
         lucide.createIcons();
         let selectedTplFile = null;
+        let selectedTplName = "";
+        let selectedTplType = "html";
         let modePaths = { html: '', plain: '' };
+        let allAttachments = [];
+        let selectedAttachmentFiles = [];
 
-        function notify(msg) { $('#toast-msg').text(msg); $('#toast').addClass('show'); setTimeout(() => $('#toast').removeClass('show'), 3000); }
+        // --- ACE EDITOR INITIALIZATION ---
+        ace.config.set("basePath", "https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/");
+        const editor = ace.edit("editor-container");
+        editor.setTheme("ace/theme/tomorrow_night");
+        editor.session.setMode("ace/mode/html");
+        editor.setOptions({
+            fontSize: "12px",
+            showPrintMargin: false,
+            wrap: true
+        });
 
-        // --- SIDEBAR TOGGLE & NAVIGATION ---
+        // Sync from Editor to Preview Frame
+        function syncPreviewFromEditor() {
+            const val = editor.getValue();
+            const iframe = $('#live-preview-frame')[0];
+            if (!iframe) return;
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(val);
+            doc.close();
+
+            // Enable WYSIWYG editing inside preview iframe
+            setTimeout(() => {
+                try {
+                    if (doc.body) {
+                        doc.body.contentEditable = "true";
+                        $(doc.body).off('input keyup blur').on('input keyup blur', syncEditorFromIframe);
+                    }
+                } catch (e) { }
+            }, 100);
+        }
+
+        // Sync from Preview Frame to Editor
+        function syncEditorFromIframe() {
+            try {
+                const iframeDoc = $('#live-preview-frame')[0].contentWindow.document;
+                if (iframeDoc && iframeDoc.documentElement) {
+                    const htmlContent = iframeDoc.documentElement.outerHTML;
+                    editor.off("change", syncPreviewFromEditor);
+                    editor.setValue(htmlContent, -1);
+                    editor.on("change", syncPreviewFromEditor);
+                }
+            } catch (e) { }
+        }
+
+        editor.on("change", syncPreviewFromEditor);
+
+        // --- VIEW TOGGLE SWITCHER (Code <=> Preview) ---
+        $('#btn-view-code').click(function () {
+            $('#btn-view-preview').removeClass('bg-blue-600 text-white').addClass('text-slate-400 hover:text-white');
+            $(this).addClass('bg-blue-600 text-white').removeClass('text-slate-400 hover:text-white');
+            $('#workspace-preview-pane').addClass('hidden');
+            $('#workspace-code-pane').removeClass('hidden');
+            editor.resize();
+        });
+
+        $('#btn-view-preview').click(function () {
+            $('#btn-view-code').removeClass('bg-blue-600 text-white').addClass('text-slate-400 hover:text-white');
+            $(this).addClass('bg-blue-600 text-white').removeClass('text-slate-400 hover:text-white');
+            $('#workspace-code-pane').addClass('hidden');
+            $('#workspace-preview-pane').removeClass('hidden');
+            syncPreviewFromEditor();
+        });
+
+        // --- CUSTOM MODAL SYSTEM ---
+        function customConfirm(title, msg, onConfirm) {
+            $('#confirm-title').text(title);
+            $('#confirm-msg').text(msg);
+            $('#modal-confirm').css('display', 'flex');
+
+            $('#btn-modal-cancel').off('click').on('click', () => $('#modal-confirm').hide());
+            $('#btn-modal-proceed').off('click').on('click', () => {
+                $('#modal-confirm').hide();
+                onConfirm();
+            });
+        }
+
+        function customPrompt(title, msg, defaultVal, onSubmit) {
+            $('#prompt-title').text(title);
+            $('#prompt-msg').text(msg);
+            $('#prompt-input').val(defaultVal || '');
+            $('#modal-prompt').css('display', 'flex');
+            $('#prompt-input').focus();
+
+            $('#btn-prompt-cancel').off('click').on('click', () => $('#modal-prompt').hide());
+            $('#btn-prompt-submit').off('click').on('click', () => {
+                const val = $('#prompt-input').val().trim();
+                if (val) {
+                    $('#modal-prompt').hide();
+                    onSubmit(val);
+                }
+            });
+        }
+
+        function notify(msg) {
+            $('#toast-msg').text(msg);
+            $('#toast').addClass('show');
+            setTimeout(() => $('#toast').removeClass('show'), 3000);
+        }
+
+        // --- SIDEBAR NAVIGATION ---
         const sidebar = $('#sidebar');
-
         function applySidebarState(collapsed) {
             if (collapsed) {
-                sidebar.removeClass('w-64 p-6').addClass('w-20 p-4 items-center');
+                sidebar.removeClass('w-56 p-4').addClass('w-16 p-3 items-center');
                 $('.sidebar-text').addClass('hidden');
-                $('.nav-btn').removeClass('justify-start px-4').addClass('justify-center px-0');
-                $('#toggle-sidebar').removeClass('justify-start px-4').addClass('justify-center px-0');
+                $('.nav-btn').removeClass('justify-start px-3').addClass('justify-center px-0');
+                $('#toggle-sidebar').removeClass('justify-start px-3').addClass('justify-center px-0');
                 $('#toggle-icon').attr('data-lucide', 'panel-left-open');
             } else {
-                sidebar.removeClass('w-20 p-4 items-center').addClass('w-64 p-6');
+                sidebar.removeClass('w-16 p-3 items-center').addClass('w-56 p-4');
                 $('.sidebar-text').removeClass('hidden');
-                $('.nav-btn').removeClass('justify-center px-0').addClass('justify-start px-4');
-                $('#toggle-sidebar').removeClass('justify-center px-0').addClass('justify-start px-4');
+                $('.nav-btn').removeClass('justify-center px-0').addClass('justify-start px-3');
+                $('#toggle-sidebar').removeClass('justify-center px-0').addClass('justify-start px-3');
                 $('#toggle-icon').attr('data-lucide', 'panel-left-close');
             }
             lucide.createIcons();
@@ -488,16 +798,16 @@
         function switchSection(id) {
             $('.nav-btn').removeClass('bg-blue-600/20 text-blue-400 font-bold border border-blue-500/20');
             $(`.nav-btn[data-section="${id}"]`).addClass('bg-blue-600/20 text-blue-400 font-bold border border-blue-500/20');
-            $('main > section').addClass('hidden'); $(`#section-${id}`).removeClass('hidden');
+            $('main > section').addClass('hidden');
+            $(`#section-${id}`).removeClass('hidden');
             localStorage.setItem('activeSection', id);
 
             if (id === 'history') loadHistory();
-            if (id === 'template') loadAttachments();
+            if (id === 'attachments' || id === 'config') loadAttachments();
         }
 
         $('.nav-btn').click(function () { switchSection($(this).data('section')); });
 
-        // Initial Sidebar & Section setup
         applySidebarState(localStorage.getItem('sidebarCollapsed') === 'true');
         switchSection(localStorage.getItem('activeSection') || 'dashboard');
 
@@ -506,7 +816,7 @@
             const input = $('#smtp-pass');
             const type = input.attr('type') === 'password' ? 'text' : 'password';
             input.attr('type', type);
-            $(this).html(type === 'password' ? '<i data-lucide="eye" class="w-5 h-5"></i>' : '<i data-lucide="eye-off" class="w-5 h-5"></i>');
+            $(this).html(type === 'password' ? '<i data-lucide="eye" class="w-4 h-4"></i>' : '<i data-lucide="eye-off" class="w-4 h-4"></i>');
             lucide.createIcons();
         });
 
@@ -517,6 +827,9 @@
                 modePaths.html = data.EMAIL_CONTENT ? data.EMAIL_CONTENT.html_path : '';
                 modePaths.plain = data.EMAIL_CONTENT ? data.EMAIL_CONTENT.plain_path : '';
                 $('#config-mode').trigger('change');
+
+                // Reload templates after config is loaded so active template status is known
+                loadTemplates();
             });
         }
 
@@ -526,139 +839,445 @@
         });
 
         $('#form-config').submit(function (e) {
-            e.preventDefault(); const data = {};
-            $(this).serializeArray().forEach(i => { const [s, k] = i.name.split('.'); if (!data[s]) data[s] = {}; data[s][k] = i.value; });
-            $.ajax({ url: '/api/config', type: 'POST', contentType: 'application/json', data: JSON.stringify(data), success: () => notify('Settings Saved') });
+            e.preventDefault();
+            const data = {};
+            $(this).serializeArray().forEach(i => {
+                const [s, k] = i.name.split('.');
+                if (!data[s]) data[s] = {};
+                data[s][k] = i.value;
+            });
+            $.ajax({
+                url: '/api/config',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: () => notify('Settings Saved Successfully!')
+            });
         });
+
+        $('#btn-save-config-top').click(() => $('#form-config').submit());
 
         $('#test-smtp-btn').click(function () {
             notify('Testing SMTP Connection...');
             const data = {};
-            $('#form-config').serializeArray().forEach(i => { const [s, k] = i.name.split('.'); if (!data[s]) data[s] = {}; data[s][k] = i.value; });
+            $('#form-config').serializeArray().forEach(i => {
+                const [s, k] = i.name.split('.');
+                if (!data[s]) data[s] = {};
+                data[s][k] = i.value;
+            });
             $.ajax({
-                url: '/api/test-smtp', type: 'POST', contentType: 'application/json', data: JSON.stringify(data),
+                url: '/api/test-smtp',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
                 success: (res) => notify(res.message || 'Connection Successful!'),
                 error: (err) => notify(err.responseJSON?.error || 'Connection Failed!')
             });
         });
 
-        // --- TEMPLATES ---
-        function loadTemplates() {
-            $.get('/api/templates/list', (data) => {
-                const list = $('#template-list').empty();
-                const sel = $('#active-tpl-selector').empty().append('<option value="">-- Choose Template --</option>');
-                data.forEach(t => {
-                    const el = $(`<div class="p-4 rounded-2xl border border-slate-800 bg-slate-900/40 hover:border-blue-500 cursor-pointer transition-all"><div class="text-[9px] text-slate-500 font-black uppercase mb-1">${t.type}</div><div class="text-xs font-bold truncate">${t.name}</div></div>`);
-                    el.click(() => {
-                        selectedTplFile = t.filename;
-                        $.get(`/api/template/content?filename=${t.filename}`, (res) => {
-                            $('#template-editor').val(res.content).trigger('input');
-                            $('#update-template').removeClass('hidden');
-                            $('#close-template').removeClass('hidden');
-                            notify(`Editing: ${t.name}`);
-                        });
-                    });
-                    list.append(el);
-                    sel.append(`<option value="uploads/templates/${t.filename}" data-type="${t.type}">${t.name}</option>`);
-                });
-                const currentPath = $('#active-path-hidden').val();
-                if (currentPath) $('#active-tpl-selector').val(currentPath);
+        // --- EMAIL TEMPLATE GALLERY & WORKSPACE OVERLAY ---
+        function openFullWorkspace(filename, name, type) {
+            selectedTplFile = filename;
+            selectedTplName = name;
+            selectedTplType = type;
+
+            $('#workspace-tpl-title').text(name);
+            $('#workspace-tpl-badge').text(type.toUpperCase());
+            editor.session.setMode(type === 'html' ? "ace/mode/html" : "ace/mode/text");
+
+            $.get(`/api/template/content?filename=${filename}`, (res) => {
+                editor.setValue(res.content, -1);
+                $('#full-editor-workspace').removeClass('hidden');
+                $('#btn-view-code').click();
+                editor.resize();
             });
         }
+
+        function closeFullWorkspace() {
+            $('#full-editor-workspace').addClass('hidden');
+            selectedTplFile = null;
+        }
+
+        $('#btn-close-workspace').click(closeFullWorkspace);
+
+        $('#workspace-save-btn').click(function () {
+            if (!selectedTplFile) return;
+            $.ajax({
+                url: '/api/templates/update',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ filename: selectedTplFile, content: editor.getValue() }),
+                success: () => notify('Template Saved!')
+            });
+        });
+
+        $('#workspace-delete-btn').click(function () {
+            if (!selectedTplFile) return;
+            customConfirm("Delete Template", `Are you sure you want to delete ${selectedTplName}?`, () => {
+                $.ajax({
+                    url: `/api/templates/${selectedTplFile}`,
+                    type: 'DELETE',
+                    success: () => {
+                        closeFullWorkspace();
+                        loadTemplates();
+                        notify('Template Deleted');
+                    }
+                });
+            });
+        });
+
+        function loadTemplates() {
+            $.get('/api/templates/list', (data) => {
+                const grid = $('#template-cards-grid').empty();
+                const sel = $('#active-tpl-selector').empty().append('<option value="">-- Choose Template --</option>');
+                const activePath = ($('#active-path-hidden').val() || '').replace(/\\/g, '/');
+
+                if (data && data.length) {
+                    data.forEach(t => {
+                        const templatePath = `uploads/templates/${t.filename}`;
+                        const isActive = activePath.length > 0 && (activePath === templatePath || activePath.endsWith(t.filename));
+
+                        const card = $(`
+                            <div class="relative glass-card p-5 rounded-2xl border border-slate-800 flex flex-col justify-between space-y-4 hover:border-slate-700 transition-all">
+                                ${isActive ? `
+                                    <div class="absolute top-3 right-3 flex items-center gap-1.5 text-[9px] font-bold bg-emerald-950/80 text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-500/40 shadow-sm">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> ACTIVE
+                                    </div>
+                                ` : ''}
+                                <div>
+                                    <div class="mb-2">
+                                        <span class="text-[9px] font-bold font-mono px-2 py-0.5 rounded uppercase ${t.type === 'html' ? 'bg-blue-900/40 text-blue-400' : 'bg-slate-800 text-slate-300'}">${t.type}</span>
+                                    </div>
+                                    <h3 class="text-sm font-bold text-slate-100 truncate pr-16">${t.name}</h3>
+                                    <p class="text-slate-500 text-[11px] font-mono mt-1 truncate">${t.filename}</p>
+                                </div>
+                                <div class="flex items-center gap-2 pt-2 border-t border-slate-800/80">
+                                    <button class="btn-card-edit bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 flex-1 justify-center">
+                                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit
+                                    </button>
+                                    <button class="btn-card-activate ${isActive ? 'bg-amber-900/30 hover:bg-amber-900/50 text-amber-400 border border-amber-500/30' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'} px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex-1 text-center">
+                                        ${isActive ? 'Deactivate' : 'Set Active'}
+                                    </button>
+                                    <button class="btn-card-delete bg-red-900/20 hover:bg-red-900/40 text-red-400 p-1.5 rounded-lg transition-all" title="Delete">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `);
+
+                        card.find('.btn-card-edit').click(() => openFullWorkspace(t.filename, t.name, t.type));
+
+                        card.find('.btn-card-activate').click(() => {
+                            if (isActive) {
+                                // Deactivate template in state and backend
+                                modePaths.html = '';
+                                modePaths.plain = '';
+                                $('#active-path-hidden').val('');
+                                $('#active-plain-hidden').val('');
+                                $('#active-tpl-selector').val('');
+
+                                const data = {};
+                                $('#form-config').serializeArray().forEach(i => {
+                                    const [s, k] = i.name.split('.');
+                                    if (!data[s]) data[s] = {};
+                                    data[s][k] = i.value;
+                                });
+
+                                $.ajax({
+                                    url: '/api/config',
+                                    type: 'POST',
+                                    contentType: 'application/json',
+                                    data: JSON.stringify(data),
+                                    success: () => {
+                                        loadConfig();
+                                        notify(`Deactivated template: ${t.name}`);
+                                    }
+                                });
+                            } else {
+                                // Activate template
+                                if (t.type === 'html') {
+                                    modePaths.html = templatePath;
+                                } else {
+                                    modePaths.plain = templatePath;
+                                }
+
+                                $('#active-path-hidden').val(templatePath);
+                                $('#active-plain-hidden').val(templatePath);
+                                $('#active-tpl-selector').val(templatePath);
+                                $('#config-mode').val(t.type);
+
+                                const data = {};
+                                $('#form-config').serializeArray().forEach(i => {
+                                    const [s, k] = i.name.split('.');
+                                    if (!data[s]) data[s] = {};
+                                    data[s][k] = i.value;
+                                });
+
+                                $.ajax({
+                                    url: '/api/config',
+                                    type: 'POST',
+                                    contentType: 'application/json',
+                                    data: JSON.stringify(data),
+                                    success: () => {
+                                        loadConfig();
+                                        notify(`Set active template: ${t.name}`);
+                                    }
+                                });
+                            }
+                        });
+
+                        card.find('.btn-card-delete').click(() => {
+                            customConfirm("Delete Template", `Delete ${t.name}?`, () => {
+                                $.ajax({
+                                    url: `/api/templates/${t.filename}`,
+                                    type: 'DELETE',
+                                    success: () => {
+                                        loadTemplates();
+                                        notify('Template Deleted');
+                                    }
+                                });
+                            });
+                        });
+
+                        grid.append(card);
+                        sel.append(`<option value="${templatePath}" data-type="${t.type}">${t.name}</option>`);
+                    });
+                    lucide.createIcons();
+                } else {
+                    grid.append('<div class="col-span-full glass-card p-8 rounded-2xl text-center text-slate-500 italic">No templates created yet. Click "Create New" or "Upload Template" above.</div>');
+                }
+
+                if (activePath) $('#active-tpl-selector').val(activePath);
+            });
+        }
+
+        $('#tpl-input').on('change', function (e) {
+            if (!e.target.files.length) return;
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const content = event.target.result;
+                const extension = file.name.split('.').pop().toLowerCase();
+                const name = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+                const type = extension === 'html' ? 'html' : 'plain';
+
+                $.ajax({
+                    url: '/api/templates/save',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ name, content, type }),
+                    success: () => {
+                        loadTemplates();
+                        notify(`Uploaded: ${name}`);
+                        $('#tpl-input').val('');
+                    },
+                    error: () => notify('Failed to upload template')
+                });
+            };
+            reader.readAsText(file);
+        });
+
+        $('#btn-new-template').click(function () {
+            customPrompt("New Template", "Enter template name:", "New Template", (name) => {
+                const content = "<!-- Insert HTML template content here -->";
+                const type = "html";
+                $.ajax({
+                    url: '/api/templates/save',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ name, content, type }),
+                    success: (res) => {
+                        loadTemplates();
+                        notify('Template Created!');
+                        openFullWorkspace(res.filename, name, type);
+                    }
+                });
+            });
+        });
 
         $('#active-tpl-selector').change(function () {
             const val = $(this).val();
             const type = $(this).find(':selected').data('type');
             if (val) {
+                if (type === 'html') modePaths.html = val;
+                else modePaths.plain = val;
+
                 $('#active-path-hidden').val(val);
                 $('#active-plain-hidden').val(val);
-                $('#config-mode').val(type).trigger('change');
-                notify('Template Set');
+                $('#config-mode').val(type);
+                notify('Active Template Selected');
+            } else {
+                modePaths.html = '';
+                modePaths.plain = '';
+                $('#active-path-hidden').val('');
+                $('#active-plain-hidden').val('');
+                notify('Template Deactivated');
             }
         });
 
-        $('#update-template').click(function () {
-            if (!selectedTplFile) return;
-            $.ajax({ url: '/api/templates/update', type: 'POST', contentType: 'application/json', data: JSON.stringify({ filename: selectedTplFile, content: $('#template-editor').val() }), success: () => notify('Updated') });
-        });
+        // --- SELECTIVE ATTACHMENTS MANAGEMENT ---
+        function renderAttachmentsUI() {
+            const list = $('#attachments-list').empty();
+            if (allAttachments && allAttachments.length) {
+                allAttachments.forEach(f => {
+                    const isSelected = selectedAttachmentFiles.includes(f);
+                    list.append(`
+                        <div class="flex justify-between items-center bg-slate-900/60 p-3 rounded-xl border border-slate-800 hover:border-slate-700 transition-all">
+                            <div class="flex items-center gap-3">
+                                <input type="checkbox" class="attach-toggle w-4 h-4 rounded bg-slate-950 border-slate-700 text-blue-600 focus:ring-0 cursor-pointer" data-file="${f}" ${isSelected ? 'checked' : ''}>
+                                <span class="text-xs font-bold font-mono text-slate-200 truncate"><i data-lucide="file" class="w-3.5 h-3.5 inline mr-2 text-slate-500"></i>${f}</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase ${isSelected ? 'bg-emerald-900/40 text-emerald-400' : 'bg-slate-800 text-slate-500'}">${isSelected ? 'Included' : 'Excluded'}</span>
+                                <button class="text-red-400 hover:text-red-300 font-bold text-[10px] uppercase tracking-wider px-2" onclick="removeAttachment('${f}')">Remove</button>
+                            </div>
+                        </div>
+                    `);
+                });
+            } else {
+                list.append('<div class="text-xs text-slate-500 italic p-2">No attachments uploaded yet.</div>');
+            }
 
-        $('#close-template').click(function () {
-            selectedTplFile = null;
-            $('#template-editor').val('').trigger('input');
-            $('#update-template').addClass('hidden');
-            $('#close-template').addClass('hidden');
-            notify('Closed Editor');
-        });
+            const configPicker = $('#config-attachments-selector').empty();
+            if (allAttachments && allAttachments.length) {
+                allAttachments.forEach(f => {
+                    const isSelected = selectedAttachmentFiles.includes(f);
+                    configPicker.append(`
+                        <label class="flex items-center gap-2 cursor-pointer text-slate-300 hover:text-white">
+                            <input type="checkbox" class="attach-toggle w-3.5 h-3.5 rounded bg-slate-900 border-slate-800 text-blue-600 focus:ring-0" data-file="${f}" ${isSelected ? 'checked' : ''}>
+                            <span class="truncate font-mono">${f}</span>
+                        </label>
+                    `);
+                });
+            } else {
+                configPicker.append('<div class="text-slate-500 italic">No attachments uploaded</div>');
+            }
 
-        $('#save-template').click(function () {
-            const content = $('#template-editor').val();
-            if (!content) return notify("Editor Empty");
-            const name = prompt("Name:"); if (!name) return;
-            const type = content.includes('<html>') ? 'html' : 'plain';
-            $.ajax({ url: '/api/templates/save', type: 'POST', contentType: 'application/json', data: JSON.stringify({ name, content, type }), success: () => { loadTemplates(); notify('Saved'); } });
-        });
+            lucide.createIcons();
 
-        $('#template-editor').on('input', function () { $('#open-preview').prop('disabled', !$(this).val()).css('opacity', $(this).val() ? 1 : 0.5); });
-        $('#open-preview').click(() => { const doc = $('#preview-frame')[0].contentWindow.document; doc.open(); doc.write($('#template-editor').val()); doc.close(); $('#preview-modal').fadeIn(); });
-        $('#close-modal').click(() => $('#preview-modal').fadeOut());
+            $('.attach-toggle').off('change').on('change', function () {
+                const fname = $(this).data('file');
+                const checked = $(this).is(':checked');
+                if (checked && !selectedAttachmentFiles.includes(fname)) {
+                    selectedAttachmentFiles.push(fname);
+                } else if (!checked && selectedAttachmentFiles.includes(fname)) {
+                    selectedAttachmentFiles = selectedAttachmentFiles.filter(x => x !== fname);
+                }
+                saveAttachmentSelection();
+            });
+        }
 
-        // --- ATTACHMENTS ---
+        function saveAttachmentSelection() {
+            $.ajax({
+                url: '/api/attachments/select',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ selected: selectedAttachmentFiles }),
+                success: () => {
+                    renderAttachmentsUI();
+                    notify('Attachment selection updated');
+                }
+            });
+        }
+
+        function loadAttachments() {
+            $.get('/api/attachments', (data) => {
+                allAttachments = data.files || [];
+                selectedAttachmentFiles = data.selected || [];
+                renderAttachmentsUI();
+            });
+        }
+
         $('#attachment-input').on('change', function (e) {
             if (!e.target.files.length) return;
             const formData = new FormData();
             for (let i = 0; i < e.target.files.length; i++) { formData.append('files', e.target.files[i]); }
-            $.ajax({ url: '/api/attachments', type: 'POST', data: formData, processData: false, contentType: false, success: (d) => { notify('Attached'); loadAttachments(); } });
-        });
-
-        function loadAttachments() {
-            $.get('/api/attachments', (data) => {
-                const list = $('#attachments-list').empty();
-                if (data.files && data.files.length) {
-                    data.files.forEach(f => list.append(`
-                        <div class="flex justify-between items-center bg-slate-900/50 p-3 rounded-xl border border-slate-800">
-                            <span class="text-xs font-bold font-mono text-slate-300 truncate"><i data-lucide="file" class="w-3 h-3 inline mr-2 text-slate-500"></i>${f}</span>
-                            <button class="text-red-500 hover:text-red-400 font-bold text-[10px] uppercase tracking-widest px-2" onclick="removeAttachment('${f}')">Remove</button>
-                        </div>
-                    `));
-                    lucide.createIcons();
-                } else {
-                    list.append('<div class="text-xs text-slate-500 italic p-2">No attachments added.</div>');
+            $.ajax({
+                url: '/api/attachments',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: (d) => {
+                    allAttachments = d.files || [];
+                    selectedAttachmentFiles = d.selected || [];
+                    renderAttachmentsUI();
+                    notify('Attachment Uploaded & Included!');
                 }
             });
-        }
-
-        window.removeAttachment = function (filename) {
-            $.ajax({ url: `/api/attachments/${filename}`, type: 'DELETE', success: () => { notify('Removed'); loadAttachments(); } });
-        }
-
-        // --- RECIPIENTS ---
-        const recDrop = $('#recipient-drop');
-        recDrop.on('dragover', (e) => { e.preventDefault(); recDrop.addClass('border-blue-500 bg-slate-800/50'); });
-        recDrop.on('dragleave', (e) => { e.preventDefault(); recDrop.removeClass('border-blue-500 bg-slate-800/50'); });
-        recDrop.on('drop', (e) => {
-            e.preventDefault(); recDrop.removeClass('border-blue-500 bg-slate-800/50');
-            const files = e.originalEvent.dataTransfer.files;
-            if (files.length) { $('#recipient-input')[0].files = files; $('#recipient-input').trigger('change'); }
         });
 
-        $('#recipient-input').on('change', function (e) {
-            if (!e.target.files.length) return;
-            const formData = new FormData(); formData.append('file', e.target.files[0]);
+        window.removeAttachment = function (filename) {
+            customConfirm("Remove Attachment", `Remove file ${filename}?`, () => {
+                $.ajax({
+                    url: `/api/attachments/${filename}`,
+                    type: 'DELETE',
+                    success: () => {
+                        loadAttachments();
+                        notify('Attachment Removed');
+                    }
+                });
+            });
+        };
+
+        // --- RECIPIENTS STATE & UPLOADS ---
+        function renderRecipientsList(count, recipients) {
+            $('#stat-total-queue').text(`${count} Ready`);
+            if (count > 0) {
+                $('#recipient-drop').addClass('hidden');
+                $('#recipients-table-container').removeClass('hidden');
+                const body = $('#recipients-table-body').empty();
+                recipients.forEach((em, i) => {
+                    body.append(`<tr data-email="${em.replace(/["\\]/g, '\\$&')}"><td class="p-3 text-slate-500 font-mono">${i + 1}</td><td class="p-3 font-bold">${em}</td><td class="p-3 text-right status-col text-slate-400 text-[10px] font-bold uppercase">Ready</td></tr>`);
+                });
+            } else {
+                $('#recipients-table-container').addClass('hidden');
+                $('#recipient-drop').removeClass('hidden');
+                $('#recipients-table-body').empty();
+            }
+        }
+
+        function handleRecipientUpload(file) {
+            if (!file) return;
+            const formData = new FormData();
+            formData.append('file', file);
             $.ajax({
-                url: '/api/recipients', type: 'POST', data: formData, processData: false, contentType: false, success: (d) => {
-                    $('#stat-total-queue').text(`${d.count} Ready`);
-                    const body = $('#recipients-table-body').empty();
-                    d.recipients.forEach((em, i) => body.append(`<tr data-email="${em.replace(/["\\]/g, '\\$&')}"><td class="p-5 text-slate-500">${i + 1}</td><td class="p-5 font-bold">${em}</td><td class="p-5 text-right status-col text-slate-400 text-xs font-black uppercase">Ready</td></tr>`));
+                url: '/api/recipients',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: (d) => {
+                    renderRecipientsList(d.count, d.recipients);
                     notify(`Imported ${d.count} contacts`);
                 }
             });
+        }
+
+        const recDrop = $('#recipient-drop');
+        recDrop.on('dragover', (e) => { e.preventDefault(); recDrop.addClass('border-blue-500 bg-slate-800/40'); });
+        recDrop.on('dragleave', (e) => { e.preventDefault(); recDrop.removeClass('border-blue-500 bg-slate-800/40'); });
+        recDrop.on('drop', (e) => {
+            e.preventDefault();
+            recDrop.removeClass('border-blue-500 bg-slate-800/40');
+            const files = e.originalEvent.dataTransfer.files;
+            if (files.length) handleRecipientUpload(files[0]);
+        });
+
+        $('#recipient-input').on('change', function (e) {
+            if (e.target.files.length) handleRecipientUpload(e.target.files[0]);
+        });
+
+        $('#recipient-header-input').on('change', function (e) {
+            if (e.target.files.length) handleRecipientUpload(e.target.files[0]);
         });
 
         $('#clear-recipients-btn').click(() => {
-            $.post('/api/recipients/clear', () => {
-                $('#stat-total-queue').text(`0 Ready`);
-                $('#recipients-table-body').empty();
-                notify('Contacts Cleared');
+            customConfirm("Clear Contacts", "Are you sure you want to clear all imported contacts?", () => {
+                $.post('/api/recipients/clear', () => {
+                    renderRecipientsList(0, []);
+                    notify('Contacts Cleared');
+                });
             });
         });
 
@@ -668,12 +1287,12 @@
                 const tbody = $('#history-table-body').empty();
                 if (data && data.length) {
                     data.forEach(job => tbody.append(`
-                        <tr class="hover:bg-slate-800/30 transition-colors">
-                            <td class="p-5 text-slate-400 font-mono text-xs">${job.date}</td>
-                            <td class="p-5 font-bold">${job.subject}</td>
-                            <td class="p-5 text-green-500 font-bold">${job.sent}</td>
-                            <td class="p-5 text-red-500 font-bold">${job.failed}</td>
-                            <td class="p-5 text-right text-[10px] font-black uppercase tracking-widest ${job.status === 'Completed' ? 'text-blue-500' : (job.status === 'Running' ? 'text-yellow-500' : 'text-red-500')}">${job.status}</td>
+                        <tr class="hover:bg-slate-800/20 transition-colors">
+                            <td class="p-3 text-slate-400 font-mono text-[11px]">${job.date}</td>
+                            <td class="p-3 font-bold">${job.subject}</td>
+                            <td class="p-3 text-emerald-500 font-bold">${job.sent}</td>
+                            <td class="p-3 text-red-500 font-bold">${job.failed}</td>
+                            <td class="p-3 text-right text-[10px] font-bold uppercase tracking-wider ${job.status === 'Completed' ? 'text-blue-400' : (job.status === 'Running' ? 'text-amber-400' : 'text-red-400')}">${job.status}</td>
                         </tr>
                     `));
                 }
@@ -681,10 +1300,44 @@
         }
         $('#refresh-history-btn').click(loadHistory);
 
+        // --- DANGER ZONE ACTIONS ---
+        $('#btn-reset-config').click(function () {
+            customConfirm("Reset Configuration", "Are you sure you want to reset configuration settings to defaults?", () => {
+                $.ajax({
+                    url: '/api/config/reset',
+                    type: 'POST',
+                    success: (res) => {
+                        loadConfig();
+                        notify(res.message || 'Configuration Reset Successful');
+                    },
+                    error: (err) => notify(err.responseJSON?.message || 'Error resetting configuration')
+                });
+            });
+        });
+
+        $('#btn-clean-slate').click(function () {
+            customConfirm("System Clean Slate Wipe", "WARNING: This will permanently delete all templates, attachments, history, recipients, and logs! Proceed?", () => {
+                $.ajax({
+                    url: '/api/system/clean-slate',
+                    type: 'POST',
+                    success: (res) => {
+                        loadConfig();
+                        loadTemplates();
+                        loadAttachments();
+                        loadHistory();
+                        renderRecipientsList(0, []);
+                        $('#log-viewer').text('');
+                        notify(res.message || 'Clean Slate Reset Completed!');
+                    },
+                    error: (err) => notify(err.responseJSON?.message || 'Error executing clean slate reset')
+                });
+            });
+        });
+
         // --- ENGINE CONTROLS ---
-        $('#btn-start').click(() => $.post('/api/mailer/start', () => { switchSection('dashboard'); notify('Started'); }).fail(e => notify(e.responseJSON?.error || "Error Starting")));
+        $('#btn-start').click(() => $.post('/api/mailer/start', () => { switchSection('dashboard'); notify('Dispatch Engine Started'); }).fail(e => notify(e.responseJSON?.error || "Error Starting Engine")));
         $('#btn-stop').click(() => $.post('/api/mailer/stop', () => notify('Stop Signal Sent')));
-        $('#btn-retry').click(() => $.post('/api/mailer/retry', () => { switchSection('dashboard'); notify('Retrying Failed...'); }).fail(e => notify(e.responseJSON?.error || "Error")));
+        $('#btn-retry').click(() => $.post('/api/mailer/retry', () => { switchSection('dashboard'); notify('Retrying Failed Emails...'); }).fail(e => notify(e.responseJSON?.error || "Error")));
 
         setInterval(() => {
             $.get('/api/mailer/status', (data) => {
@@ -753,9 +1406,16 @@
             });
         }, 1000);
 
-        $('#clear-logs-btn').click(() => { $.post('/api/logs/clear', () => { $('#log-viewer').text(''); notify('Cleared'); }); });
+        $('#clear-logs-btn').click(() => {
+            customConfirm("Clear Logs", "Are you sure you want to clear system logs?", () => {
+                $.post('/api/logs/clear', () => { $('#log-viewer').text(''); notify('Logs Cleared'); });
+            });
+        });
 
-        $(document).ready(() => { loadConfig(); loadTemplates(); });
+        $(document).ready(() => {
+            loadConfig();
+            loadAttachments();
+        });
     </script>
 </body>
 

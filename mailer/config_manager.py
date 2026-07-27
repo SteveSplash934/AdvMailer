@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import json
 import configparser
 from datetime import datetime
 
@@ -17,7 +18,6 @@ class ConfigManager:
                         (section TEXT, key TEXT, value TEXT, PRIMARY KEY (section, key))''')
         cursor.execute('''CREATE TABLE IF NOT EXISTS templates 
                         (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, filename TEXT, type TEXT)''')
-        # ADDED JOB HISTORY TABLE
         cursor.execute('''CREATE TABLE IF NOT EXISTS job_history 
                         (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT, subject TEXT, sent INTEGER, failed INTEGER, status TEXT)''')
         conn.commit()
@@ -47,7 +47,8 @@ class ConfigManager:
             ('SENDER', 'name', 'Steve Splash'), ('SENDER', 'email', 'sender@example.com'),
             ('EMAIL_CONTENT', 'subject', 'Default Email Subject'),
             ('EMAIL_CONTENT', 'mode', 'html'), ('EMAIL_CONTENT', 'html_path', ''),
-            ('EMAIL_CONTENT', 'plain_path', ''), ('SETTINGS', 'concurrency_limit', '5')
+            ('EMAIL_CONTENT', 'plain_path', ''), ('EMAIL_CONTENT', 'selected_attachments', '[]'),
+            ('SETTINGS', 'concurrency_limit', '5')
         ]
         with sqlite3.connect(self.db_path) as conn:
             conn.executemany('INSERT OR REPLACE INTO settings VALUES (?, ?, ?)', defaults)
@@ -71,9 +72,48 @@ class ConfigManager:
         with sqlite3.connect(self.db_path) as conn:
             conn.executemany('INSERT OR REPLACE INTO settings VALUES (?, ?, ?)', updates)
 
+    def reset_config(self):
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute('DELETE FROM settings')
+        if os.path.exists(self.ini_path):
+            self._import_from_ini()
+        else:
+            self._seed_defaults()
+
+    def wipe_database(self):
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute('DELETE FROM settings')
+            conn.execute('DELETE FROM templates')
+            conn.execute('DELETE FROM job_history')
+        if os.path.exists(self.ini_path):
+            self._import_from_ini()
+        else:
+            self._seed_defaults()
+
+    def get_selected_attachments(self):
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT value FROM settings WHERE section = 'EMAIL_CONTENT' AND key = 'selected_attachments'")
+            row = cursor.fetchone()
+            if row and row[0]:
+                try:
+                    return json.loads(row[0])
+                except:
+                    return [x.strip() for x in row[0].split(',') if x.strip()]
+            return []
+
+    def save_selected_attachments(self, file_list):
+        val = json.dumps(file_list)
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("INSERT OR REPLACE INTO settings (section, key, value) VALUES ('EMAIL_CONTENT', 'selected_attachments', ?)", (val,))
+
     def add_template(self, name, filename, t_type):
         with sqlite3.connect(self.db_path) as conn:
             conn.execute('INSERT INTO templates (name, filename, type) VALUES (?, ?, ?)', (name, filename, t_type))
+
+    def delete_template(self, filename):
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute('DELETE FROM templates WHERE filename = ?', (filename,))
 
     def get_templates(self):
         with sqlite3.connect(self.db_path) as conn:
@@ -81,7 +121,6 @@ class ConfigManager:
             cursor.execute('SELECT name, filename, type FROM templates')
             return [{"name": r[0], "filename": r[1], "type": r[2]} for r in cursor.fetchall()]
 
-    # --- ADDED HISTORY METHODS ---
     def add_job(self, subject):
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
