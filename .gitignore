@@ -1,48 +1,28 @@
-# --- Python ---
-__pycache__/
-*.py[cod]
-*$py.class
-
-# C extensions
-*.so
-
-# Packages
+uploads/*
+!uploads/*/
+!.gitkeep
+logs/*
+!logs/.gitkeep
 .venv/
 venv/
 ENV/
 env/
-dist/
-build/
-*.egg-info/
-.eggs/
-
-# --- Flask / Web ---
-# Flask local development instances
-instance/
-# If you store secrets or local configs here
-.env
-.flaskenv
-
-# --- IDE / OS ---
-# VS Code
-.vscode/
-# PyCharm
-.idea/
-# OS specific
-.DS_Store
-Thumbs.db
-
-# --- Logs ---
-*.log
-trash/
-uploads/
+.uv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
 config.ini
-sample.env
-smtptest.py
+*.env
+*.pem
+*.key
+@docs/
 todo.md
 run.bat
-recp.txt
+todo.md
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
 database.db
-@docs/
-ProMailer_Plus/
-0config.ini0
