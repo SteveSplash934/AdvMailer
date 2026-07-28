@@ -1,6 +1,0 @@
-flask
-flask-cors
-aiosmtplib
-email-validator
-configparser
-aiofiles
