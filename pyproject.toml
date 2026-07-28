@@ -1,5 +1,5 @@
 [project]
-name = "Sendora Lite"
+name = "Sendora_Lite"
 version = "0.1.0"
 description = "Sendora Lite is an asynchronous bulk email dispatch engine built with Python, Flask, and `aiosmtplib`. We designed it for high performance and ease of use, featuring a dark-themed control panel, a full-screen template manager with an integrated Ace Code Editor, and live WYSIWYG previews. The entire project is managed natively using `uv` for fast, isolated execution."
 readme = "README.md"
