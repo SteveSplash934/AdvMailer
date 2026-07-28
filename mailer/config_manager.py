@@ -42,10 +42,10 @@ class ConfigManager:
 
     def _seed_defaults(self):
         defaults = [
-            ('SMTP', 'host', 'smtp.gmail.com'), ('SMTP', 'port', '587'),
+            ('SMTP', 'host', ''), ('SMTP', 'port', ''),
             ('SMTP', 'username', ''), ('SMTP', 'password', ''),
-            ('SENDER', 'name', 'Steve Splash'), ('SENDER', 'email', 'sender@example.com'),
-            ('EMAIL_CONTENT', 'subject', 'Default Email Subject'),
+            ('SENDER', 'name', ''), ('SENDER', 'email', ''),
+            ('EMAIL_CONTENT', 'subject', ''),
             ('EMAIL_CONTENT', 'mode', 'html'), ('EMAIL_CONTENT', 'html_path', ''),
             ('EMAIL_CONTENT', 'plain_path', ''), ('EMAIL_CONTENT', 'selected_attachments', '[]'),
             ('SETTINGS', 'concurrency_limit', '5')
