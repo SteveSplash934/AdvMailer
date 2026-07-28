@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="templates/SendorLogo.png" alt="Sendora Lite Logo" width="320">
+  <img src="static/SendorLogo.png" alt="Sendora Lite Logo" width="320">
 </p>
 
 # Sendora Lite

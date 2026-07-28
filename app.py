@@ -44,7 +44,7 @@ def index():
 
 @app.route('/SendorLogo.png')
 def serve_logo():
-    return send_from_directory('templates', 'SendorLogo.png')
+    return send_from_directory('static', 'SendorLogo.png')
 
 @app.route('/api/config', methods=['GET', 'POST'])
 def handle_config():
