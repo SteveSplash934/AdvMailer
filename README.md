@@ -5,21 +5,11 @@
 # Sendora Lite
 
 <p align="center">
-  <a href="https://github.com/stevesplash934/SendoraLite/stargazers">
-    <img src="https://img.shields.io/github/stars/stevesplash934/SendoraLite?style=for-the-badge&logo=github&color=gold" alt="Stars">
-  </a>
-  <a href="https://github.com/stevesplash934/SendoraLite/network/members">
-    <img src="https://img.shields.io/github/forks/stevesplash934/SendoraLite?style=for-the-badge&logo=github&color=blue" alt="Forks">
-  </a>
-  <a href="https://github.com/stevesplash934/SendoraLite/releases">
-    <img src="https://img.shields.io/github/downloads/stevesplash934/SendoraLite/total?style=for-the-badge&logo=github&color=green" alt="Downloads">
-  </a>
-  <a href="https://github.com/stevesplash934/SendoraLite/issues">
-    <img src="https://img.shields.io/github/issues/stevesplash934/SendoraLite?style=for-the-badge&logo=github&color=orange" alt="Issues">
-  </a>
-  <a href="https://github.com/stevesplash934/SendoraLite/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/stevesplash934/SendoraLite?style=for-the-badge&logo=github&color=purple" alt="License">
-  </a>
+  <a href="https://github.com/stevesplash934/SendoraLite/stargazers"><img src="https://img.shields.io/github/stars/stevesplash934/SendoraLite?style=flat&logo=github&color=gold" alt="Stars"></a>
+  <a href="https://github.com/stevesplash934/SendoraLite/network/members"><img src="https://img.shields.io/github/forks/stevesplash934/SendoraLite?style=flat&logo=github&color=blue" alt="Forks"></a>
+  <a href="https://github.com/stevesplash934/SendoraLite/releases"><img src="https://img.shields.io/github/downloads/stevesplash934/SendoraLite/total?style=flat&logo=github&color=green" alt="Downloads"></a>
+  <a href="https://github.com/stevesplash934/SendoraLite/issues"><img src="https://img.shields.io/github/issues/stevesplash934/SendoraLite?style=flat&logo=github&color=orange" alt="Issues"></a>
+  <a href="https://github.com/stevesplash934/SendoraLite/blob/main/LICENSE"><img src="https://img.shields.io/github/license/stevesplash934/SendoraLite?style=flat&logo=github&color=purple" alt="License"></a>
 </p>
 
 Sendora Lite is an asynchronous bulk email dispatch engine built with Python, Flask, and `aiosmtplib`. We designed it for high performance and ease of use, featuring a dark-themed control panel, a full-screen template manager with an integrated Ace Code Editor, and live WYSIWYG previews. The entire project is managed natively using `uv` for fast, isolated execution.
