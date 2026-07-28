@@ -12,6 +12,7 @@ import aiosmtplib
 from mailer.config_manager import ConfigManager
 from mailer.parser import RecipientParser
 from mailer.sender import MailerEngine
+from flask import send_from_directory
 
 app = Flask(__name__)
 
@@ -40,6 +41,10 @@ recipients_list = []
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/SendorLogo.png')
+def serve_logo():
+    return send_from_directory('templates', 'SendorLogo.png')
 
 @app.route('/api/config', methods=['GET', 'POST'])
 def handle_config():
