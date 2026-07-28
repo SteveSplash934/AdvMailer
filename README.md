@@ -1,0 +1,135 @@
+# ProMailer+
+
+ProMailer+ is an asynchronous bulk email dispatch engine built with Python, Flask, and `aiosmtplib`. We designed it for high performance and ease of use, featuring a dark-themed control panel, a full-screen template manager with an integrated Ace Code Editor, and live WYSIWYG previews. The entire project is managed natively using `uv` for fast, isolated execution.
+
+---
+
+## Key Features
+
+* **Asynchronous Dispatch Engine:** Uses `aiosmtplib` and Python `asyncio` semaphores to handle concurrent, multi-threaded email transmission without blocking.
+* **Mailer Settings Panel:** A dedicated section to manage SMTP connection parameters, sender identities, and safely toggle passwords. Includes a "TEST SMTP" function to verify connections before dispatch.
+* **Template Control Panel & Workspace:**
+* Gallery view for managing saved HTML and plain text email templates.
+* Full-screen workspace overlay for a distraction-free editing environment.
+* Integrated **Ace Code Editor** for real-time HTML syntax highlighting.
+* Single-canvas view switcher to toggle between **Code View** and **Live Preview**.
+* **Visual WYSIWYG Editing:** Click and edit text directly inside the interactive live preview frame—changes synchronize to the source code automatically.
+* Active template toggling with clear status indicators.
+
+* **Selective Email Attachments:** A multi-file workspace where you can check or uncheck individual uploaded files to include in specific email runs.
+* **Smart Recipient Management:** Drag-and-drop CSV and TXT importer. It automatically handles deduplication, validates syntax via `email-validator`, and provides dynamic state views of your lists.
+* **Real-time Monitoring & History:** Track live delivery counts (Sent vs. Failed), view job history logs, and monitor live-scrolling terminal outputs directly in the UI.
+* **Danger Zone Maintenance:** Utilities for safe configuration resets and full "Clean Slate" database/disk wipes, protected by confirmation overlays.
+* **`uv` Package Management:** Fully integrated with Astral's `uv` for strict environment isolation, deterministic locking, and fast execution.
+
+By the way, this is just a toy tool! You can check out the real and super advanced version of it here: [https://github.com/SteveSplash934/sendora](https://github.com/SteveSplash934/sendora)
+
+---
+
+## Project Structure
+
+```text
+├── app.py                     # Main Flask web application and API endpoints
+├── pyproject.toml             # Project manifest & dependency configuration
+├── .python-version            # Python version specification (3.13.3)
+├── config.ini.example         # Template configuration file
+├── mailer/
+│   ├── __init__.py
+│   ├── config_manager.py      # SQLite database manager & configuration state
+│   ├── parser.py              # CSV / TXT recipient parser & validation
+│   └── sender.py              # Asynchronous SMTP dispatch engine
+├── templates/
+│   └── index.html             # Application single-page interface (Tailwind CSS, Ace Editor)
+├── uploads/
+│   ├── attachments/           # Stored email attachments
+│   └── templates/             # Stored email template files
+└── logs/
+    └── mailer_live.log        # Real-time application log output
+
+```
+
+---
+
+## Setup & Installation
+
+### Prerequisites
+
+* Python **3.10+** (Python **3.13.3** is recommended)
+* **`uv`** package manager.
+
+If you don't have `uv` installed:
+
+```bash
+# On macOS / Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# On Windows (PowerShell)
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+```
+
+### Installation Steps
+
+1. **Clone the Repository**:
+```bash
+git clone https://github.com/iamstevesplash/AdvMailer.git
+cd AdvMailer
+
+```
+
+
+2. **Initialize and Sync Environment**:
+Run `uv sync` to set up the virtual environment (`.venv`) and install the required packages defined in `pyproject.toml`.
+```bash
+uv sync
+
+```
+
+
+3. **Launch the Application**:
+Start the Flask server using `uv run`.
+```bash
+uv run app.py
+
+```
+
+
+4. **Access the Application**:
+Open your browser and navigate to:
+```text
+http://127.0.0.1:5000
+
+```
+
+
+
+---
+
+## Usage Workflow
+
+1. **Configure Mailer Settings**:
+* Go to **Mailer Settings** in the sidebar.
+* Input your SMTP server details (Host, Port, Username, Password).
+* Click **TEST SMTP** to verify the credentials, then click **SAVE SETTINGS**.
+
+
+2. **Manage Email Templates**:
+* Navigate to **Email Template**.
+* Click **Create New** or upload an existing template (`.html` or `.txt`).
+* Click **Edit** to open the workspace. You can switch between **Code View** and **Live Preview** (where you can edit text visually).
+* Click **Set Active** on a template card to select it for your next dispatch.
+
+
+3. **Select Attachments**:
+* Navigate to **Email Attachment**.
+* Upload files and use the checkboxes to include/exclude them from the dispatch.
+
+
+4. **Import Recipients**:
+* Go to **Recipients**.
+* Drag and drop a `.csv` or `.txt` file containing your email list. The app will validate and deduplicate them automatically.
+
+
+5. **Start Dispatch**:
+* Click **START DISPATCH** in the top-right corner.
+* Monitor your delivery progress in real-time on the **Dashboard** or **Logs** page.
