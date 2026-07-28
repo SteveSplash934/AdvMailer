@@ -1,6 +1,28 @@
-# ProMailer+
+<p align="center">
+  <img src="templates/SendorLogo.png" alt="Sendora Lite Logo" width="320">
+</p>
 
-ProMailer+ is an asynchronous bulk email dispatch engine built with Python, Flask, and `aiosmtplib`. We designed it for high performance and ease of use, featuring a dark-themed control panel, a full-screen template manager with an integrated Ace Code Editor, and live WYSIWYG previews. The entire project is managed natively using `uv` for fast, isolated execution.
+# Sendora Lite
+
+<p align="center">
+  <a href="https://github.com/stevesplash934/SendoraLite/stargazers">
+    <img src="https://img.shields.io/github/stars/stevesplash934/SendoraLite?style=for-the-badge&logo=github&color=gold" alt="Stars">
+  </a>
+  <a href="https://github.com/stevesplash934/SendoraLite/network/members">
+    <img src="https://img.shields.io/github/forks/stevesplash934/SendoraLite?style=for-the-badge&logo=github&color=blue" alt="Forks">
+  </a>
+  <a href="https://github.com/stevesplash934/SendoraLite/releases">
+    <img src="https://img.shields.io/github/downloads/stevesplash934/SendoraLite/total?style=for-the-badge&logo=github&color=green" alt="Downloads">
+  </a>
+  <a href="https://github.com/stevesplash934/SendoraLite/issues">
+    <img src="https://img.shields.io/github/issues/stevesplash934/SendoraLite?style=for-the-badge&logo=github&color=orange" alt="Issues">
+  </a>
+  <a href="https://github.com/stevesplash934/SendoraLite/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/stevesplash934/SendoraLite?style=for-the-badge&logo=github&color=purple" alt="License">
+  </a>
+</p>
+
+Sendora Lite is an asynchronous bulk email dispatch engine built with Python, Flask, and `aiosmtplib`. We designed it for high performance and ease of use, featuring a dark-themed control panel, a full-screen template manager with an integrated Ace Code Editor, and live WYSIWYG previews. The entire project is managed natively using `uv` for fast, isolated execution.
 
 ---
 
@@ -22,7 +44,9 @@ ProMailer+ is an asynchronous bulk email dispatch engine built with Python, Flas
 * **Danger Zone Maintenance:** Utilities for safe configuration resets and full "Clean Slate" database/disk wipes, protected by confirmation overlays.
 * **`uv` Package Management:** Fully integrated with Astral's `uv` for strict environment isolation, deterministic locking, and fast execution.
 
-By the way, this is just a toy tool! You can check out the real and super advanced version of it here: [https://github.com/SteveSplash934/sendora](https://github.com/SteveSplash934/sendora)
+*By the way, this is only a toy version of the tool! If you’d like to see the real, much more advanced version, check it out here: [Sendora](https://github.com/SteveSplash934/sendora)*
+
+
 
 ---
 
@@ -72,36 +96,28 @@ powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
 1. **Clone the Repository**:
 ```bash
-git clone https://github.com/iamstevesplash/AdvMailer.git
-cd AdvMailer
+git clone https://github.com/stevesplash934/SendoraLite.git
+cd SendoraLite
 
 ```
-
 
 2. **Initialize and Sync Environment**:
 Run `uv sync` to set up the virtual environment (`.venv`) and install the required packages defined in `pyproject.toml`.
 ```bash
 uv sync
-
 ```
-
 
 3. **Launch the Application**:
 Start the Flask server using `uv run`.
 ```bash
 uv run app.py
-
 ```
-
 
 4. **Access the Application**:
 Open your browser and navigate to:
 ```text
 http://127.0.0.1:5000
-
 ```
-
-
 
 ---
 
