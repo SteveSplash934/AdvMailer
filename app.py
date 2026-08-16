@@ -42,9 +42,9 @@ recipients_list = []
 def index():
     return render_template('index.html')
 
-@app.route('/SendorLogo.png')
+@app.route('/SendoraLiteLogo.png')
 def serve_logo():
-    return send_from_directory('static', 'SendorLogo.png')
+    return send_from_directory('static', 'SendoraLiteLogo.png')
 
 @app.route('/api/config', methods=['GET', 'POST'])
 def handle_config():
