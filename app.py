@@ -20,6 +20,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_FOLDER = os.path.join(BASE_DIR, 'uploads', 'templates')
 ATTACHMENT_FOLDER = os.path.join(BASE_DIR, 'uploads', 'attachments')
 LOG_FOLDER = os.path.join(BASE_DIR, 'logs')
+IGNORED_FILES = {'.gitkeep', '.gitignore', '.DS_Store', 'desktop.ini'}
 
 os.makedirs(TEMPLATE_FOLDER, exist_ok=True)
 os.makedirs(ATTACHMENT_FOLDER, exist_ok=True)
@@ -72,6 +73,8 @@ def clean_slate():
         for folder in [TEMPLATE_FOLDER, ATTACHMENT_FOLDER]:
             if os.path.exists(folder):
                 for fname in os.listdir(folder):
+                    if fname in IGNORED_FILES:
+                        continue
                     fpath = os.path.join(folder, fname)
                     if os.path.isfile(fpath):
                         os.remove(fpath)
@@ -119,15 +122,18 @@ def handle_attachments():
         selected = config_mgr.get_selected_attachments()
         for f in files:
             fname = secure_filename(f.filename)
+            if fname in IGNORED_FILES or not fname:
+                continue
             f.save(os.path.join(ATTACHMENT_FOLDER, fname))
             if fname not in selected:
                 selected.append(fname)
         config_mgr.save_selected_attachments(selected)
-        return jsonify({"status": "success", "files": os.listdir(ATTACHMENT_FOLDER), "selected": selected})
+        visible_files = [f for f in os.listdir(ATTACHMENT_FOLDER) if f not in IGNORED_FILES]
+        return jsonify({"status": "success", "files": visible_files, "selected": selected})
     else:
-        files = os.listdir(ATTACHMENT_FOLDER)
-        selected = config_mgr.get_selected_attachments()
-        return jsonify({"files": files, "selected": selected})
+        visible_files = [f for f in os.listdir(ATTACHMENT_FOLDER) if f not in IGNORED_FILES]
+        selected = [s for s in config_mgr.get_selected_attachments() if s not in IGNORED_FILES]
+        return jsonify({"files": visible_files, "selected": selected})
 
 @app.route('/api/attachments/select', methods=['POST'])
 def select_attachments():
@@ -255,12 +261,12 @@ def start_mailer():
         subject = current_config.get('EMAIL_CONTENT', {}).get('subject', 'No Subject')
         job_id = config_mgr.add_job(subject)
         
-        # Filter attachments based on user selection
+        # Filter attachments based on user selection and ignored files array
         selected_filenames = set(config_mgr.get_selected_attachments())
         attachments = [
             os.path.join(ATTACHMENT_FOLDER, f) 
             for f in os.listdir(ATTACHMENT_FOLDER) 
-            if f in selected_filenames
+            if f not in IGNORED_FILES and f in selected_filenames
         ]
         
         mailer_engine = MailerEngine(current_config, logger)
@@ -296,7 +302,7 @@ def retry_mailer():
         attachments = [
             os.path.join(ATTACHMENT_FOLDER, f) 
             for f in os.listdir(ATTACHMENT_FOLDER) 
-            if f in selected_filenames
+            if f not in IGNORED_FILES and f in selected_filenames
         ]
         
         mailer_engine = MailerEngine(current_config, logger)
