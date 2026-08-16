@@ -136,6 +136,37 @@ You can also run Sendora Lite in a containerized production environment:
 
 ---
 
+### Firewall & Security Configuration
+
+If you are hosting Sendora Lite on a VPS, cloud provider, or Windows Server, ensure port `5000` is open to accept incoming web traffic.
+
+* **Ubuntu / Debian (UFW)**:
+  ```bash
+  sudo ufw allow 5000/tcp
+  sudo ufw reload
+  ```
+
+* **CentOS / RHEL / Fedora (firewalld)**:
+  ```bash
+  sudo firewall-cmd --add-port=5000/tcp --permanent
+  sudo firewall-cmd --reload
+  ```
+
+* **Windows Server / Windows 10/11 (PowerShell as Administrator)**:
+  ```powershell
+  New-NetFirewallRule -DisplayName "Sendora Lite Inbound Port 5000" -Direction Inbound -LocalPort 5000 -Protocol TCP -Action Allow
+  ```
+
+* **Cloud Provider Security Groups (AWS / DigitalOcean / Hetzner / Linode)**:
+  In your cloud management portal, go to **Networking / Security Groups / Firewalls** and add an **Inbound Rule**:
+  * **Protocol**: `TCP`
+  * **Port**: `5000`
+  * **Source**: `0.0.0.0/0` (Anywhere)
+
+*Once this is successful, you can now access the service on your VPS/RDP `http://<ip>:<service_port>` (e.g, `http://123.123.123.123:5000`)*
+
+---
+
 ## Usage Workflow
 
 1. **Configure Mailer Settings**:
