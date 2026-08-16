@@ -68,7 +68,7 @@ class MailerEngine:
                     
                     self.progress['sent'] += 1
                     self.progress["recipient_statuses"][recipient] = "Sent"
-                    self.logger.info(f"SUCCESS: {recipient}")
+                    # self.logger.info(f"SUCCESS: {recipient}")
                     return
                 except Exception as e:
                     if self.stop_requested:

@@ -1,0 +1,15 @@
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.git
+.gitignore
+database.db
+logs/*.log
+uploads/attachments/*
+uploads/templates/*
+!uploads/attachments/.gitkeep
+!uploads/templates/.gitkeep
+this is sendora lite
+@docs
