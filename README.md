@@ -167,6 +167,57 @@ If you are hosting Sendora Lite on a VPS, cloud provider, or Windows Server, ens
 
 ---
 
+### Custom Domain & SSL Setup (Nginx + Let's Encrypt)
+
+To serve Sendora Lite over a custom domain (e.g. `https://sendoralite.yourdomain.com`) on standard HTTP/HTTPS ports (80/443), set up Nginx as a reverse proxy with free Let's Encrypt SSL.
+
+#### 1. DNS Configuration
+In your domain DNS manager, add an **A Record**:
+* **Name**: `sendora` (or `@` for root domain)
+* **Value**: Your VPS IP address (`123.345.678.90`)
+
+#### 2. Install and Configure Nginx
+Install Nginx on your VPS:
+```bash
+sudo apt update && sudo apt install -y nginx
+```
+
+Create `/etc/nginx/sites-available/sendora`:
+```nginx
+server {
+    listen 80;
+    server_name sendoralite.yourdomain.com;
+
+    client_max_body_size 50M;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Enable the configuration and restart Nginx:
+```bash
+sudo ln -s /etc/nginx/sites-available/sendora /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+#### 3. Enable SSL/HTTPS with Certbot
+Install Certbot and automatically obtain an SSL certificate:
+```bash
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d sendoralite.yourdomain.com
+```
+
+Certbot will automatically manage certificate renewals and redirect all HTTP traffic to HTTPS.
+
+---
+
 ## Usage Workflow
 
 1. **Configure Mailer Settings**:
